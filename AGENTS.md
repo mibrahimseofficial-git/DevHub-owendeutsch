@@ -53,3 +53,20 @@ One task at a time. For each task:
 - No security headers (HSTS/X-Frame-Options/nosniff/CSP) on any page.
 - debug.log, xmlrpc.php -> 403; REST user enum -> 401. (Good.)
 - Plugin readme.txt files publicly readable (200).
+
+## Branch workflow (client-directed)
+- `main` = the client's uploaded theme snapshot (reference only, don't edit).
+- `development` = **all changes go here.** The client downloads `owendeutsch.zip`
+  from `development` and replaces the theme on STAGING, tests, then promotes to LIVE.
+- Theme is stored in the repo as `owendeutsch.zip` (root). Working copy lives in
+  `/tmp/theme/owendeutsch` after extraction; `/tmp/theme_backup_owendeutsch` holds
+  the pre-change copy for diffs.
+- Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
+
+## Task 1 status (DONE — committed to development)
+Commit `4240f99`. Added `od_location_search_url()` to functions.php (rawurlencode +
+mb_strtolower). Replaced 15 raw location-URL sites across single-lodges.php,
+single-cp_birds.php, search.php, grid_template.php, taxonomy-cp_birds_country.php,
+templates/template-conservation.php. Encoded the 2 hardcoded lodge URLs. Removed the
+ISO-8859-1 charset meta from header.php. All PHP passes `php -l`.
+Note: `data-bird-locations` JS path is already safe (jQuery.param encodes).
