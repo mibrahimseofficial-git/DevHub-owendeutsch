@@ -98,8 +98,8 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#1 | 8,424 broken location links (HTTP 400) | DONE (staging) — Part B false positive |
 | PDF#2 | Dead birdingtop500 footer badge | DONE (staging) — repo synced |
 | PDF#3 | 7 relative lodge URLs missing scheme | DONE (staging) — commit `0558a7e` |
-| PDF#4 | 44 dead external links | OPEN — verdict pending; remeasure (real ~36, see below) |
-| PDF#5 | W3Schools keywords meta | OPEN — confirmed present on staging + live |
+| PDF#4 | 44 dead external links | DEFERRED (user, 2026-11-02) — verified mostly real; ~13 client-named URLs broken, 6-7 now 200. Skip for now, revisit later |
+| PDF#5 | W3Schools keywords meta | OPEN — confirmed on staging + live, every page type |
 | ... | remaining PDF tasks | not yet verified |
 
 ## Our own additions (NOT in the client document)
