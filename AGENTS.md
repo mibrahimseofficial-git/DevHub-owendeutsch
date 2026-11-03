@@ -89,15 +89,39 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
 
 ## Client document task status
 Work in CLIENT DOCUMENT order. Statuses: DONE (staging) / OPEN / FALSE POSITIVE.
+Task numbering follows the user's "PDF#N" labels (31 tasks). Note the PDF's slide
+"03 · 7 Relative Lodge URLs + 44 Dead External Links" is split into TWO client tasks:
+PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | 8,424 broken location links (HTTP 400) | DONE (staging) — Part B false positive |
-| 2 | Dead birdingtop500 footer badge | DONE (staging) — repo synced |
-| 3 | 7 relative lodge URLs + 44 dead external links | lodge-URL half DONE in repo; external links OPEN |
-| 4 | Missing `<body>` / page-rendering failures | not yet verified |
-| 5 | W3Schools keywords meta | OPEN — confirmed present on staging + live |
+| PDF#1 | 8,424 broken location links (HTTP 400) | DONE (staging) — Part B false positive |
+| PDF#2 | Dead birdingtop500 footer badge | DONE (staging) — repo synced |
+| PDF#3 | 7 relative lodge URLs missing scheme | DONE (staging) — commit `0558a7e` |
+| PDF#4 | 44 dead external links | OPEN — verdict pending; remeasure (real ~36, see below) |
+| PDF#5 | W3Schools keywords meta | OPEN — confirmed present on staging + live |
 | ... | remaining PDF tasks | not yet verified |
+
+## Our own additions (NOT in the client document)
+Findings from our own crawl that the client PDF does NOT name. Tracked separately from
+the 31 client tasks; surface to the client as extras, do not fold into a PDF task number.
+
+| # | Finding | Impact | Status |
+|---|---------|--------|--------|
+| OA-1 | Zoom webinar registration 404 in the (commented-out) home popup, footer.php L122-151, plus orphaned trigger in js/custom.js L358-370 | URL string present on 453 pages, but never rendered (inside an HTML comment) — no user/SEO impact | OPEN — verdict pending |
+| OA-2 | Typo'd self-link `https://www.owendeustch.com` on `/lodges/arizona-usa/` H1 (missing the "s"; edit distance 2 from `owendeutsch.com`, NXDOMAIN) | Headline lodge link points at a non-existent domain | OPEN — verdict pending |
+| OA-3 | ABA (`aba.org`) 502 cluster — 6 URLs (root returns 200, sub-pages 502) | Likely a server-side outage at ABA, not our bug | OPEN — needs re-check before treating as ours |
+
+Detection method for OA-2 (typo'd self-link): extract hrefs, compute edit distance of each
+host against the canonical domain, and DNS-check the near-miss. Status code alone cannot
+distinguish a self-link typo from an unrelated dead partner domain (distance 2 vs 12-14).
+
+## External link crawl (baseline, Task PDF#4)
+Crawled all 454 sitemap pages -> 348 unique external URLs (177 hosts). 3 retries each.
+Result: 221 OK, 20x 404, 76x 403 (mostly bot-blocking: B&H affiliate, TripAdvisor,
+AllAboutBirds, DOI), 22x dead domain/server (000/502/503/522/530), 5x 429, 4x 400/401/402.
+Hard failures after retries: ~36 URLs. The PDF's "44" does not reconcile (likely counted
+403 bot-blocks). Raw data: /tmp/extall.json (links->pages), /tmp/extresall.json (status).
 
 ## Task 1 status (DONE — committed to development)
 Commit `4240f99`. Added `od_location_search_url()` to functions.php (rawurlencode +
