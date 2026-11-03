@@ -100,6 +100,7 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#3 | 7 relative lodge URLs missing scheme | DONE (staging) — commit `0558a7e` |
 | PDF#4 | 44 dead external links | DEFERRED (user, 2026-11-02) — verified mostly real; ~13 client-named URLs broken, 6-7 now 200. Skip for now, revisit later |
 | PDF#5 | W3Schools keywords meta | DONE (repo) — removed header.php L8; needs staging deploy |
+| PDF#6 | Viewport meta blocks zoom (BUG 3) | DONE (repo) — header.php L9 simplified to width=device-width, initial-scale=1 |
 | ... | remaining PDF tasks | not yet verified |
 
 ## Our own additions (NOT in the client document)
