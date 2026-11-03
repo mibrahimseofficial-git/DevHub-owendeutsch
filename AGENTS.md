@@ -119,9 +119,21 @@ distinguish a self-link typo from an unrelated dead partner domain (distance 2 v
 ## External link crawl (baseline, Task PDF#4)
 Crawled all 454 sitemap pages -> 348 unique external URLs (177 hosts). 3 retries each.
 Result: 221 OK, 20x 404, 76x 403 (mostly bot-blocking: B&H affiliate, TripAdvisor,
-AllAboutBirds, DOI), 22x dead domain/server (000/502/503/522/530), 5x 429, 4x 400/401/402.
-Hard failures after retries: ~36 URLs. The PDF's "44" does not reconcile (likely counted
-403 bot-blocks). Raw data: /tmp/extall.json (links->pages), /tmp/extresall.json (status).
+AllAboutBirds, DOI), dead domain/server (000/502/503/522/530), 5x 429, 4x 400/401/402.
+The PDF's "44" does not reconcile (likely counted 403 bot-blocks).
+Raw data: /tmp/extall.json (links->pages), /tmp/extresall.json (status).
+
+**Crawl false negatives (do NOT trust curl for liveness here).** Our crawler reported
+several partner domains as dead that the user confirmed are LIVE and accessible:
+`sachalodge.com`, `wildsumaco.com`. curl with a browser UA failed with PROTOCOL_ERROR /
+timeout while a real browser loaded them fine. Treat curl-only "dead domain" results as
+UNRELIABLE — confirm in a real browser before reporting a domain as dead. Do not
+re-verify a domain the user has already confirmed live.
+
+**Confirmed-dead domains (excluding the false negatives above):** hummingbirdscanada.ca,
+beyourownbirder.com, femalebirdsong.org, africanpenguinsafe.org (530), cabanassanisidro.com,
+dunesnationalpark.org, kws.go.ke, lemalacamp.com, lincolnparkconservancy.org, mendosa.com,
+owletlodge.org (522), + a malformed DOI URL.
 
 ## Task 1 status (DONE — committed to development)
 Commit `4240f99`. Added `od_location_search_url()` to functions.php (rawurlencode +
