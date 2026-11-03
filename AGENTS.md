@@ -13,10 +13,21 @@ Custom PHP theme `owendeutsch` + Advanced Custom Fields (ACF), D3.js globe,
 - Staging is a faithful clone — it reproduces every bug found on live.
 
 ## MANDATORY WORKFLOW (client requirement)
-**Every task must be performed on STAGING first, verified there, then deployed to LIVE.**
+**All tasks are done on STAGING first.** Work through the client document on staging,
+then present staging to the client for sign-off. Only after the client gives the go-ahead
+do we promote to LIVE:
+
+- Changes **inside the theme** -> replace the theme on LIVE.
+- Changes at the **database level** -> push staging to live.
+
 Because the site runs WP Rocket + WP Engine Object/Page Cache + Cloudflare Edge,
 every change must trigger a coordinated cache purge:
 WP Rocket -> WP Engine -> Cloudflare Edge.
+
+**Verification gotcha:** always cache-bust (`?cb=<random>`) and confirm `x-cache: MISS`
+before reading a page. WP Rocket serves stale HTML on a cache HIT, which makes fixed
+issues look unfixed (this caused a wrong Task 2 verdict once). Also verify in a real
+browser, not only curl, when the question is "does the page show results".
 
 ## Source documents (repo: mibrahimseofficial-git/DevHub-owendeutsch, branch main)
 - `Owen-Deutsch-SEO-Audit-Presentation-Final.pdf` — the 16-page client audit (31 tasks).
@@ -28,11 +39,14 @@ WP Rocket -> WP Engine -> Cloudflare Edge.
 - Generate .docx with python-docx; .pdf with pypdf/pdflatex as needed.
 
 ## Questionnaire workflow (how the user wants tasks handled)
-One task at a time. For each task:
-1. State the task as a question; give live-verified evidence.
-2. User verifies: real task or false positive.
-3. If real -> provide the solution (staging-first).
-4. User verifies / applies, says "done" -> move to next task.
+One task at a time, in CLIENT DOCUMENT order. The client PDF (31 tasks) is completed
+first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
+1. State the task as a question; give live-verified evidence + the verification method.
+2. Agent verifies it, then STOPS and asks: real or false positive?
+3. User verifies.
+4. If real -> provide the solution (staging-first) and ask "should I apply it?".
+5. User says yes -> apply it.
+6. Both sides verify the result, then move to the next task.
 
 ## Verification notes / corrections to the PDF
 - **Task 1 (8,424 broken location links):** FALSE POSITIVE as diagnosed. Site emits
@@ -40,14 +54,24 @@ One task at a time. For each task:
   crawler artifact from the DUAL charset declaration (UTF-8 + ISO-8859-1). Real fix =
   percent-encode the location query + remove the conflicting charset meta. Fix anyway
   because the client re-runs the crawler.
-- **Task 2 (birdingtop500 footer badge):** badge markup is ALREADY commented out in
-  footer.php — no live link, no image request. Still a crawler artifact; remove the
-  commented block.
+  - **CLOSED (staging).** Part A (%FF -> HTTP 400) verified fixed on staging: 0 `%FF` /
+    0 `0xFF` bytes, legacy URL now 200. Part B (generated link returns 0 birds) declared
+    a FALSE POSITIVE by the user. Note: a real-browser check showed "No birds found" for
+    the site's own generated hyphen-form URL while the en-dash form returns 100 birds —
+    an en-dash vs hyphen mismatch in the stored ACF data. Out of scope for Task 1; the
+    audit's separate "normalize ACF filter values" task covers it.
+- **Task 2 (birdingtop500 footer badge):** REAL, CLOSED (staging). The commented-out
+  block has been removed on staging (verified: cache-busted raw refs = 0; live still
+  shows 2 raw refs but 0 rendered). Badge server confirmed dead (HTTP 000, 20s timeout).
+  Never rendered for visitors (was pre-commented in the client's original upload), so the
+  "failed image request" symptom was a false positive; the cleanup is the real task.
+  Repo `development` zip updated to match staging (block removed from footer.php).
 
 ## Known live-verified facts
-- HTTP header sends `charset=UTF-8`; page also declares `<meta charset="UTF-8">` AND
-  legacy `<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">`.
-- W3Schools placeholder keywords meta present on every page.
+- HTTP header sends `charset=UTF-8`. The legacy
+  `<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">` has been
+  REMOVED on staging (Task 1); LIVE still carries it.
+- W3Schools placeholder keywords meta present on every page (staging + live) — OPEN.
 - `%FF` appears 0 times in emitted HTML; raw 0xFF byte in query string -> 400.
 - Correctly-encoded location URL returns 200 (full 1.7MB results page).
 - No security headers (HSTS/X-Frame-Options/nosniff/CSP) on any page.
@@ -63,6 +87,18 @@ One task at a time. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+## Client document task status
+Work in CLIENT DOCUMENT order. Statuses: DONE (staging) / OPEN / FALSE POSITIVE.
+
+| # | Task | Status |
+|---|------|--------|
+| 1 | 8,424 broken location links (HTTP 400) | DONE (staging) — Part B false positive |
+| 2 | Dead birdingtop500 footer badge | DONE (staging) — repo synced |
+| 3 | 7 relative lodge URLs + 44 dead external links | lodge-URL half DONE in repo; external links OPEN |
+| 4 | Missing `<body>` / page-rendering failures | not yet verified |
+| 5 | W3Schools keywords meta | OPEN — confirmed present on staging + live |
+| ... | remaining PDF tasks | not yet verified |
+
 ## Task 1 status (DONE — committed to development)
 Commit `4240f99`. Added `od_location_search_url()` to functions.php (rawurlencode +
 mb_strtolower). Replaced 15 raw location-URL sites across single-lodges.php,
@@ -70,3 +106,16 @@ single-cp_birds.php, search.php, grid_template.php, taxonomy-cp_birds_country.ph
 templates/template-conservation.php. Encoded the 2 hardcoded lodge URLs. Removed the
 ISO-8859-1 charset meta from header.php. All PHP passes `php -l`.
 Note: `data-bird-locations` JS path is already safe (jQuery.param encodes).
+
+## Task 2 status (DONE — repo synced with staging)
+Removed the commented-out birdingtop500 block from `footer.php` (was lines 100-103)
+in `owendeutsch.zip` on `development`. Staging already had this removed (edited directly
+on staging, outside the repo); the repo now matches. Only `footer.php` changed
+(148 zip entries preserved, `testzip()` clean).
+
+## Task 3 status (PARTIAL — lodge URLs committed)
+Commit `0558a7e`. Added `od_normalize_url()` (prepends `https://`, upgrades `http://`)
+and applied it to the lodge title link + both `credit_url` outputs in `single-lodges.php`.
+The external-broken-links half of Task 3 is still OPEN and needs a full crawl to
+re-measure (the PDF's "44" could not be confirmed from a sample; several reported links
+return 200).
