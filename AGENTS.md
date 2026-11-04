@@ -157,6 +157,24 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 >   Malicious Activities", reference ID) after a burst of automated requests. Live cannot be
 >   verified from here right now; the client must verify in a normal browser. Note: this is a
 >   WAF false-positive against an automated client, not evidence that real crawlers are blocked.
+>
+> **PDF#9 — STAGING RE-VERIFY 2026-11-02 (client confirmed: all work is on STAGING):**
+> * Redirect deletion **VERIFIED WORKING on staging**: `/blog/page/2/` = **200**,
+>   `/blog/page/3/` = **200**, `/blog/page/4/` = **404** (only 3 pages exist). Previously
+>   staging served `301 location:/ x-redirect-by: redirection` for page/2 — now fixed. ✅
+> * Staging page/2 has real posts ("Ibises of the World", "The Migrants Who Stay Close to
+>   Home", "The Female of the Species"). ✅
+> * **Staging is a fully locked environment**: robots.txt = `User-agent: * / Disallow: /`
+>   AND site-wide `<meta name='robots' content='noindex, nofollow'>`. This is WP Engine's
+>   staging lock, NOT Yoast output. **Consequence: the Yoast robots.txt change (removing
+>   Crawl-delay) CANNOT be verified on staging** — the platform lock overrides it. It is
+>   only observable on LIVE after deploy. Do not treat staging robots.txt as evidence.
+> * Staging sits behind its own Cloudflare (`server: cloudflare`). Client purged cache via
+>   **WP Rocket**.
+> * WORKFLOW CLARIFIED: changes are made on STAGING (theme + Redirection rules + Yoast
+>   settings live in the DB), then deployed staging → live. After deploying to live, purge
+>   BOTH WP Rocket AND the Cloudflare edge cache — the old live 301 was served with
+>   `cf-cache-status: HIT`, and a plugin-rule deletion does not evict a cached edge response.
 
 ## Our own additions (NOT in the client document)
 Findings from our own crawl that the client PDF does NOT name. Tracked separately from
