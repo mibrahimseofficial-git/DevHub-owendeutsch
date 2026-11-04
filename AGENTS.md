@@ -113,6 +113,25 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#27 | Self-host the external /globe/ JS files (slide 06: 3 "dead scripts") | DONE (repo) — vendored the 3 external scripts into the theme so /globe/ no longer depends on third-party CDNs: `js/topojson.v1.min.js` (topojson-client 1.8.0), `js/queue.v1.min.js` (queue v1), `js/bootstrap-5.3.0.bundle.min.js` (bootstrap 5.3.0-alpha3, byte-identical to the CDN file). template-globe.php now references all three via get_template_directory_uri(). Verified all 3 CDN URLs return 200 in ~0.1s from this container (the audit's "Timeout (0)" was a crawl-time blip, not a real outage) — so this is hardening/self-hosting, not a fix for an outage. NOTE (not changed): functions.php also enqueues a LOCAL bootstrap.min.js v3.3.2, so /globe/ loads bootstrap twice (3.3.2 + 5.3.0) — pre-existing; removing either risks the tab JS (`.tab("show")` is used), left for a scoped test. Also: header.php's `http://code.jquery.com/ui/1.10.2/jquery-ui.js` is COMMENTED OUT (not live mixed content); the live jQuery UI is the local 1.12.1 enqueue. |
 | PDF#25 | 1.76 MB HTML / Fancybox caption bloat (slide 07 item 01) | VERIFIED — **plugin setting, not theme code**. The activity-search page is 1.72 MB = 100 unique per-bird Fancybox `<figcaption>` blocks (~7.5 KB each, ~850 KB total, = the audit's "8,752 words"). They are NOT duplicated (100 birds = 100 captions) and are intrinsic to the search result markup that Fancybox reads via `.find('figcaption').html()`. Measured: the page is **70% whitespace and NOT minified** (homepage 589 KB, /my-recent-photos/ 1.02 MB, activity 1.72 MB — all unminified). A safe whitespace collapse (preserving single spaces, skipping script/style) gives **67% reduction** (1.72 MB → 557 KB) with byte-identical visible text. **Fix = enable WP Rocket → File Optimization → Minify HTML** (site already licenses WP Rocket 3.21.2; currently OFF). Did NOT ship a custom ob_start minifier: it would duplicate a licensed feature, risk corrupting the Fancybox caption markup the lightbox parses, and conflict with WP Rocket. Not a theme deploy. |
 | ... | remaining PDF tasks | not yet verified |
+
+### BUSINESS DEVELOPER (BD) EMAIL — 6 points re-verified on staging (2026-11-02)
+
+**Root cause of the BD's findings: the fixes live in the repo (`development`) but the
+client has NOT deployed `owendeutsch.zip` to staging yet.** Staging still runs the old
+theme, so anything fixed only in the repo still shows as broken to a crawler.
+
+| BD# | Claim | Verdict | Evidence (staging, cache-busted) |
+|-----|-------|---------|----------------------------------|
+| 1 | keywords meta still in header.php L58 | **STALE / ALREADY FIXED** | Staging renders `name="keywords"` count = 0 on /, /globe/, /blog/. Also 0 in repo header.php. BD looked at an old snapshot. |
+| 2 | 3 dead scripts on /globe/ timing out 6s | **HALF TRUE** | Staging /globe/ DOES still load d3js.org topojson/queue + jsdelivr bootstrap (old theme). But the URLs are NOT dead: all 3 return HTTP 200 in ~0.1s (verified 2026-11-02). The "6s stall" is a custom.js loader timer, not a network timeout. Real cleanup = self-host, DONE in repo (PDF#27), pending deploy. |
+| 3 | 44 broken external links not updated | **PARTLY TRUE** | Many recovered: nanpa.org 200, lincolnparkconservancy.org 200, sanisidrolodge.com 200, orangehill 200, sandpiperabaco 200, zebrahills 200, nikonusa 200. Still broken: owletlodge.org, africanpenguinsafe.org, 5x abcbirds.org article links, seattle-audubon, roku, lemalacamp, wildsumaco. NOT theme-fixable (post content + ACF lodge fields). |
+| 4 | JSON-LD leading space still present | **TRUE on staging** | Staging homepage block 2 still has `"@vocab": "https://owendeutsch.com/"` + 3 leading-space URLs. FIXED in repo (PDF#11 removed the theme block), pending deploy. |
+| 5 | Missing H1 on 15 pages | **TRUE on staging** | /globe/, /grid/, /cp_birds_country/ec/, /us/, /ca/ all h1=0 on staging. FIXED in repo (PDF#12 → h1.large), pending deploy. |
+| 6 | 21 backend items not applied | **TRUE** | None applied. NOT theme-fixable (WP admin / WP Engine / host). See DOCX section. |
+
+**Recommended action:** deploy `owendeutsch.zip` from `development` to staging. That
+resolves BD#2 (self-hosted JS), BD#4 (JSON-LD), BD#5 (H1s), and re-confirms BD#1.
+BD#3 needs content/ACF edits; BD#6 needs WP admin + host.
 | PDF#12 pagination | /blog/ rel=next/prev + page/2/ 301 | FALSE POSITIVE now — /blog/, /blog/page/2/, /blog/page/3/ all 200; prev/next links present and correct (`<a class="next page-numbers">` etc.). index.php uses the standard loop; no rel=next/prev markup in the theme (core/Yoast handle it). The audit's 2 "sequence errors" were crawl artifacts. |
 | PDF#19 | 11 blog articles use H1 for subheadings | CONTENT-level (post body), not theme code. The H1s are inside article content, not templates. |
 | PDF#20 | 332 duplicate page titles | NOT theme code — Yoast title templates + post/ACF content. |
