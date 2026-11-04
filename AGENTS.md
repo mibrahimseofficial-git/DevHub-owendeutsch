@@ -318,3 +318,13 @@ and applied it to the lodge title link + both `credit_url` outputs in `single-lo
 The external-broken-links half of Task 3 is still OPEN and needs a full crawl to
 re-measure (the PDF's "44" could not be confirmed from a sample; several reported links
 return 200).
+
+### FINAL DELIVERABLE — client progress report (2026-11-02)
+
+`Owen-Deutsch-Audit-Progress-Report.docx` — task-by-task client report covering all 58 items
+(31 SEO audit + 6 BD points + 21 maintenance). Sections: Executive Summary (58 total = 25
+fixed/verified + 33 client/infra), Deployment Status, SEO audit finding-by-finding, Broken
+External Links detail WITH working replacements (Section 3), the 21 Maintenance items with
+severity + owner (Section 4), the 6 BD points (Section 5), and Recommended Next Steps.
+Styled to match the client docs (navy #142A45 / orange #D96B1E / grey #555B63).
+
