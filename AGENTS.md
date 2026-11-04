@@ -102,6 +102,7 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#5 | W3Schools keywords meta | DONE (repo) — removed header.php L8; needs staging deploy |
 | PDF#6 | Viewport meta blocks zoom (BUG 3) | DONE (repo) — header.php L9 simplified to width=device-width, initial-scale=1 |
 | PDF#7 | Cache-Control/Pragma/Expires meta (BUG 4) | DONE (repo) — 3 tags removed from header.php. Note: did NOT actually defeat caching (x-cache HIT measured); removal is cosmetic/browser-side only |
+| PDF#8 | Rendering failures: /cp_birds_country/ec/ + /lodges/southeast-california/ | DONE (repo) — audit claim (566 bytes, no <body>/title) is FALSE POSITIVE (both pages serve valid 200 HTML). Real defect fixed: country template emitted <script>+<style> AFTER get_footer() i.e. after </html>; moved both before get_footer(). Lodge page only trailing content is a WP Rocket comment (plugin, not ours) |
 | ... | remaining PDF tasks | not yet verified |
 
 ## Our own additions (NOT in the client document)
