@@ -114,6 +114,35 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#25 | 1.76 MB HTML / Fancybox caption bloat (slide 07 item 01) | VERIFIED — **plugin setting, not theme code**. The activity-search page is 1.72 MB = 100 unique per-bird Fancybox `<figcaption>` blocks (~7.5 KB each, ~850 KB total, = the audit's "8,752 words"). They are NOT duplicated (100 birds = 100 captions) and are intrinsic to the search result markup that Fancybox reads via `.find('figcaption').html()`. Measured: the page is **70% whitespace and NOT minified** (homepage 589 KB, /my-recent-photos/ 1.02 MB, activity 1.72 MB — all unminified). A safe whitespace collapse (preserving single spaces, skipping script/style) gives **67% reduction** (1.72 MB → 557 KB) with byte-identical visible text. **Fix = enable WP Rocket → File Optimization → Minify HTML** (site already licenses WP Rocket 3.21.2; currently OFF). Did NOT ship a custom ob_start minifier: it would duplicate a licensed feature, risk corrupting the Fancybox caption markup the lightbox parses, and conflict with WP Rocket. Not a theme deploy. |
 | ... | remaining PDF tasks | not yet verified |
 
+### POST-DEPLOY RE-VERIFICATION (staging now runs `development`) — 2026-11-02
+
+After the client pushed the theme, re-checked everything on staging. **Confirmed fixed:**
+PDF#1 (all taxonomy param links 200), #2, #3 (no scheme-less lodge links), #5 (0 keywords),
+#6 (viewport OK), #7 (0 cache metas), #11 (single JSON-LD, 0 leading spaces), #12 (all H1s
+present incl. /globe/, /grid/, /cp_birds_country/*), #26 (single jQuery core).
+
+**New gaps found and fixed this round (repo, pending re-deploy):**
+- **PDF#27 completion** — `functions.php` ALSO enqueued the external d3js topojson/queue
+  globally (`theme_name_scripts`, lines 148-149), so /globe/ loaded them twice and the
+  external URLs survived my template-only fix. Repointed both to local vendored files and
+  removed the now-duplicate `<script>` tags from `template-globe.php`. Verified script order
+  on staging: d3.min.js + topojson + queue all load from the theme before the inline globe code.
+- **PDF#10 llms.txt returned HTTP 404** — the file body served fine but WP had already set a
+  404 status before `template_redirect` fired. Added `status_header( 200 )`. (Was returning
+  1829 bytes with `HTTP/2 404`.)
+- **PDF#13/#23 alt text** — corrected scan (my earlier regex broke on `?>` inside tags) found
+  15 true missing-alt images; fixed the content ones: `template-grid.php:203` (~32 /grid/
+  thumbnails), `functions.php:851` (country thumbnails), `template-argentina.php` (10 gallery
+  images), `template-entry.php` loader, header Facebook pixel. Only remaining is
+  `functions.php:3465` (wp-admin column, not public).
+- **PDF#12 empty H1** — `/globe/`, `/grid/`, `/countries/` H1 was present but EMPTY
+  (`get_field('c_page_title')` unset). Added `?: esc_html( get_the_title() )` fallback.
+
+**Not theme-fixable / client-side (confirmed on staging):** PDF#4 (44 dead external links —
+content/ACF), #20/#21 (dup titles/H1s — Yoast/content), #24 (WebP — Cloudflare/Imagify),
+#25 (HTML minify — WP Rocket setting), #30 (security headers — edge), #9 (robots.txt
+Disallow:/ is deliberate), DOCX 21 items (WP admin / host).
+
 ### BUSINESS DEVELOPER (BD) EMAIL — 6 points re-verified on staging (2026-11-02)
 
 **Root cause of the BD's findings: the fixes live in the repo (`development`) but the
