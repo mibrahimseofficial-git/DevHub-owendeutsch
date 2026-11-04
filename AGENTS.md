@@ -109,18 +109,32 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 > **PUSH RESOLVED (2026-11-02):** `GITHUB_TOKEN` recovered; commits `4ecc5c1`
 > (PDF#9) + `db17f79` pushed to `origin/development`. Branch in sync.
 >
-> **PDF#9 correction — blog uses INFINITE SCROLL (YITH plugin), not pagination.**
-> `/blog/page/2/` is a REAL page (200 at origin, real posts, correct rel=next/prev)
-> but the Redirection plugin 301s it to `/` — and Cloudflare caches that 301
-> (cf-cache-status: HIT). The rule matches path+query, so `?cb=x` bypasses it.
-> Current state is inconsistent: page/2 301, page/3 200, page/4 301 (404 at origin).
-> Recommendation (SEO-best): REMOVE the rule — keep paginated URLs 200 + indexable,
-> keep infinite scroll for humans. A wildcard (`^/blog/page/\d+/?$` → `/`) is worse:
-> it hides MORE content and risks breaking YITH scroll, which fetches the next page
-> URL via AJAX. Note: Google deprecated rel=next/prev as a signal in 2019, so the
-> audit's "pagination sequence error" claim is largely moot. All 276 posts are in
-> post-sitemap.xml, so nothing is orphaned. CLIENT ACTION: delete rule in
-> Tools → Redirection + purge Cloudflare cache. Verify in browser: /blog/page/2/.
+> **PDF#9 — robots.txt IS managed by Yoast** (confirmed from client screenshot:
+> `Yoast SEO → Tools → File editor`). Live content matches the PDF exactly. Fix =
+> delete the `Crawl-delay: 10` line in Yoast. RESEARCH CORRECTION: Google does NOT
+> support `crawl-delay` (Google's own robots.txt docs list it as unsupported), so it
+> does NOT throttle Googlebot — the audit's "also throttles Google" is wrong. It DOES
+> throttle Bing, Yahoo (Slurp) and Yandex, which honour it. So the line is still worth
+> removing, but it is a smaller issue than the audit implies.
+>
+> **PDF#9 — Redirection table reviewed (client export, 2026-11-02).** Two distinct groups:
+> 1. BLOG PAGINATION rules `/blog/page/{2,4,6,10,11,13,16}/` → `/` (301). Many DUPLICATES
+>    (page/6 ×3, page/16 ×3, page/11 ×2). Huge hit counts: one entry 45,478; also 138, 77,
+>    35, 34, 13, 11. This is direct evidence of the crawl waste the audit describes — bots
+>    repeatedly requesting pagination URLs that 301 away. NOTE page/3 is NOT in the rule
+>    list, which matches our measurement that page/3 returns 200.
+> 2. SECURITY-PROBE rules (legitimate hardening, NOT SEO-relevant): `/blog/wp-login.php`
+>    (×3), `/wp-blog.php`, `/blog/wp-commentin.php`, `/blog/wp-admin/includes/`,
+>    `/wp-content/themes/blogood/{img_screen,doc}.php`, `/blog/wp-content/themes/seotheme/mar.php`,
+>    `/blog.php`, `/testing-blog/` → `/`. These redirect known bot/hacker probe paths away.
+>    Keep them; optionally change 301 → 410 Gone (301 wrongly says "moved permanently").
+>
+> RECOMMENDATION (unchanged, SEO-best): DELETE the `/blog/page/N/` → `/` rules. Paginated
+> pages are real content (page/2 = 200 at origin with real posts); a 301 to the homepage
+> falsely says "this IS the homepage". Keep infinite scroll for humans. Then purge the
+> Cloudflare edge cache (the 301 is cached, cf-cache-status: HIT). A wildcard rule is WORSE
+> (hides more content; risks breaking YITH scroll, which fetches the next-page URL via AJAX).
+> CLIENT ACTION: Tools → Redirection (delete pagination rules) + Cloudflare purge.
 
 ## Our own additions (NOT in the client document)
 Findings from our own crawl that the client PDF does NOT name. Tracked separately from
