@@ -106,6 +106,11 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#9 | Robots.txt & search-parameter spider trap | PARTIAL (repo) — theme part DONE; two items are NOT theme-fixable. (a) Filter URL bloat: 51 emission sites across 6 templates now normalise ACF values via new `od_search_param()` (trim+mb_strtolower+rawurlencode), so "Flight"/" flight"/"FLIGHT" collapse to one canonical URL. Verified case/space variants already return identical result sets, so behaviour is unchanged. (b) `noindex, follow` on /?s= ALREADY present (WP core) — recommendation already satisfied. (c) `Crawl-delay: 10` in robots.txt is REAL but comes from Yoast/robots.txt, not the theme — CLIENT action. (d) /blog/page/2/ 301→/ is REAL but header shows `x-redirect-by: redirection` (Redirection plugin), not the theme — CLIENT action. (e) blog rel=next/prev is a FALSE POSITIVE — theme output is correct (page2 prev→/, next→page/3/) |
 | ... | remaining PDF tasks | not yet verified |
 
+> **PENDING PUSH (2026-11-02):** commit `4ecc5c1` (PDF#9) is committed locally on
+> `development` but NOT pushed — `GITHUB_TOKEN` expired mid-session (GitHub API
+> returns 401). Earlier push of `8b8e0b0` (PDF#8) succeeded. On next session:
+> retry `git push origin development`, then continue from PDF#10.
+
 ## Our own additions (NOT in the client document)
 Findings from our own crawl that the client PDF does NOT name. Tracked separately from
 the 31 client tasks; surface to the client as extras, do not fold into a PDF task number.
