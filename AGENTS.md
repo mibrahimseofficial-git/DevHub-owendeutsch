@@ -106,10 +106,21 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#9 | Robots.txt & search-parameter spider trap | PARTIAL (repo) — theme part DONE; two items are NOT theme-fixable. (a) Filter URL bloat: 51 emission sites across 6 templates now normalise ACF values via new `od_search_param()` (trim+mb_strtolower+rawurlencode), so "Flight"/" flight"/"FLIGHT" collapse to one canonical URL. Verified case/space variants already return identical result sets, so behaviour is unchanged. (b) `noindex, follow` on /?s= ALREADY present (WP core) — recommendation already satisfied. (c) `Crawl-delay: 10` in robots.txt is REAL but comes from Yoast/robots.txt, not the theme — CLIENT action. (d) /blog/page/2/ 301→/ is REAL but header shows `x-redirect-by: redirection` (Redirection plugin), not the theme — CLIENT action. (e) blog rel=next/prev is a FALSE POSITIVE — theme output is correct (page2 prev→/, next→page/3/) |
 | ... | remaining PDF tasks | not yet verified |
 
-> **PENDING PUSH (2026-11-02):** commit `4ecc5c1` (PDF#9) is committed locally on
-> `development` but NOT pushed — `GITHUB_TOKEN` expired mid-session (GitHub API
-> returns 401). Earlier push of `8b8e0b0` (PDF#8) succeeded. On next session:
-> retry `git push origin development`, then continue from PDF#10.
+> **PUSH RESOLVED (2026-11-02):** `GITHUB_TOKEN` recovered; commits `4ecc5c1`
+> (PDF#9) + `db17f79` pushed to `origin/development`. Branch in sync.
+>
+> **PDF#9 correction — blog uses INFINITE SCROLL (YITH plugin), not pagination.**
+> `/blog/page/2/` is a REAL page (200 at origin, real posts, correct rel=next/prev)
+> but the Redirection plugin 301s it to `/` — and Cloudflare caches that 301
+> (cf-cache-status: HIT). The rule matches path+query, so `?cb=x` bypasses it.
+> Current state is inconsistent: page/2 301, page/3 200, page/4 301 (404 at origin).
+> Recommendation (SEO-best): REMOVE the rule — keep paginated URLs 200 + indexable,
+> keep infinite scroll for humans. A wildcard (`^/blog/page/\d+/?$` → `/`) is worse:
+> it hides MORE content and risks breaking YITH scroll, which fetches the next page
+> URL via AJAX. Note: Google deprecated rel=next/prev as a signal in 2019, so the
+> audit's "pagination sequence error" claim is largely moot. All 276 posts are in
+> post-sitemap.xml, so nothing is orphaned. CLIENT ACTION: delete rule in
+> Tools → Redirection + purge Cloudflare cache. Verify in browser: /blog/page/2/.
 
 ## Our own additions (NOT in the client document)
 Findings from our own crawl that the client PDF does NOT name. Tracked separately from
