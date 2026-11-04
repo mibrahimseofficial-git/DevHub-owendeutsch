@@ -135,6 +135,28 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 > Cloudflare edge cache (the 301 is cached, cf-cache-status: HIT). A wildcard rule is WORSE
 > (hides more content; risks breaking YITH scroll, which fetches the next-page URL via AJAX).
 > CLIENT ACTION: Tools → Redirection (delete pagination rules) + Cloudflare purge.
+>
+> **PDF#9 — VERIFY PASS 2026-11-02 (after client edits):**
+> * Redirection list now **12 items** — all blog-pagination rules DELETED ✅. The 12 that
+>   remain are security probes (`/blog/wp-login.php` ×3, `/wp-blog.php`, `/blog/wp-commentin.php`,
+>   `/blog/wp-admin/includes/`, `blogood/*.php`, `seotheme/mar.php`, `/blog.php`, `/testing-blog/`)
+>   plus one spam-comment URL. Correct to keep.
+> * **LIVE robots.txt STILL shows `Crawl-delay: 10`** — verified with a cache-buster
+>   (cf-cache-status: MISS), so it is NOT an edge-cache artifact; the live origin still
+>   emits it. The Yoast edit either did not reach live or Yoast is serving a cached copy.
+>   NEEDS FOLLOW-UP.
+> * **STAGING robots.txt = `User-agent: *` / `Disallow: /`** — this is WP Engine's standard
+>   staging lock, NOT the Yoast output. Staging overrides robots.txt entirely, so staging
+>   cannot be used to verify the Yoast robots.txt change. Verify on LIVE only.
+> * Staging `/blog/page/2/` = **200** ✅ and `/blog/page/4/` = **404** (only 3 pages exist) —
+>   matches expectation.
+> * ⚠️ **Cloudflare edge cache must be purged.** The old 301 for `/blog/page/2/` was served
+>   with `cf-cache-status: HIT`; deleting the plugin rule does not evict the cached 301.
+>   Until purged, `/blog/page/2/` keeps redirecting.
+> * ⚠️ **BlogVault Firewall now blocks this container's IP on live** ("Blocked because of
+>   Malicious Activities", reference ID) after a burst of automated requests. Live cannot be
+>   verified from here right now; the client must verify in a normal browser. Note: this is a
+>   WAF false-positive against an automated client, not evidence that real crawlers are blocked.
 
 ## Our own additions (NOT in the client document)
 Findings from our own crawl that the client PDF does NOT name. Tracked separately from
