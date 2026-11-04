@@ -112,6 +112,32 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#15 | Duplicate jQuery / external JS (slides 06-07) | DONE (repo) — completed the jQuery de-duplication safely. header.php's hardcoded jquery-3.6.1.js was REMOVED in PDF#14, but WP's jquery-core (3.7.1) is deferred by `defer_parsing_of_js()`, so the theme's body inline scripts calling jQuery(document).ready() would have thrown "jQuery is not defined". Fix: (a) `defer_parsing_of_js()` now also excludes jquery.min.js + jquery-migrate from defer (loads synchronously, matching previous behaviour); (b) removed the second duplicate jQuery (jquery-3.6.1.min.js) hardcoded in template-globe.php, which was loading a 3rd jQuery on /globe/. Result: 1 jQuery per page (was 3 on /globe/, 2 elsewhere). LEFT ALONE deliberately: (i) /globe/ bootstrap — local is v3.3.2 but page loads CDN v5.3.0; swapping versions would break the tab JS, not a safe blind edit; (ii) /globe/ d3js.org topojson/queue scripts — all return 200 from this container (audit's "Timeout (0)" is a crawl-time network blip); (iii) Mailchimp noConflict(true) — external plugin markup, localises $ to $mcj, does not affect Fancybox/YITH. |
 | ... | remaining PDF tasks | not yet verified |
 
+### CLIENT PDF — remaining items verified on staging (not theme-code)
+
+| # | Item | Verdict |
+|---|------|---------|
+| PDF#12 tail | 332 dup titles / 343 dup H1s | Sitewide metadata (Yoast title templates + post content), not theme code |
+| PDF#13 | 10,853 JPEGs vs 2 WebP | Enable WebP at Cloudflare/WP Engine or Imagify (infra) |
+| PDF#14 | Security headers (HSTS/XFO/nosniff/CSP) | Set at Cloudflare/WP Engine edge (infra). Theme sets none; confirmed absent on staging |
+| PDF#14 | 1.76 MB activity-search HTML | Not on homepage (589 KB, 0 figcaptions); only on large result pages. Not a safe blind edit |
+| PDF#9 | Crawl-delay: 10 + /?s= noindex | /?s= ALREADY `noindex, nofollow` (verified). Crawl-delay comes from Yoast/robots.txt |
+| PDF#6 | /globe/ 6s load + 3 dead scripts | FALSE POSITIVE now: /globe/ = 0.69s, all 3 scripts return 200 |
+| PDF#6 | /2025-year-in-review-gallery/ timeout | Now 200 |
+
+### SECOND DOCUMENT — `Owen-Deutsch-Website-Maintenance-Site-Health-Review.docx`
+Infrastructure / host-level review (21 issues). **No theme-code changes required** — all
+items are WP Engine / Cloudflare / wp-config / plugin / content actions for the client.
+Reference for the monthly care plan. Theme-relevant notes only:
+- **#19 DB charset utf8 (not utf8mb4)** — same encoding family as the PDF#1 en-dash/%FF
+  issue; convert on staging, then re-test the location filters.
+- **#16 version disclosure** — WP Rocket generator meta is emitted by the plugin, not the theme.
+- **#14/#15 inactive themes & plugin readme** — host/plugin cleanup, not theme files.
+
+### ENGAGEMENT STATUS (theme deliverable)
+All theme-code-fixable items across BOTH documents are DONE in `development`.
+Remaining work is client/infra: deploy `owendeutsch.zip` to staging, then set security
+headers + WebP + utf8mb4 + memory/OPcache at the host edge.
+
 > **PUSH RESOLVED (2026-11-02):** `GITHUB_TOKEN` recovered; commits `4ecc5c1`
 > (PDF#9) + `db17f79` pushed to `origin/development`. Branch in sync.
 >
