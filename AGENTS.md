@@ -349,3 +349,33 @@ had alt but no width/height. Added `width`/`height` from the `square-medium` att
 This reduces layout shift (CLS) on the highest-traffic dynamic pages. Remaining instances are
 images inserted directly into post bodies, which WordPress core handles.
 
+
+### Country taxonomy 404 fix + H1 on blog/video pages (2026-11-03)
+
+**Symptom:** 23 of the 31 URLs in `lodges_country-sitemap.xml` returned 404 on staging, e.g.
+`/cp_birds_country/argentina/`, `/cp_birds_country/peru/`. `/grid/` and `/globe/` linked the
+same pattern with 2-letter codes (`/cp_birds_country/ar/`) and worked.
+
+**Cause:** `functions.php` registered two taxonomies with the *same* rewrite slug,
+`cp_birds_country` — `cp_birds_country` on `cp_birds` (bird terms, slugs are ISO codes like
+`ar`) and `lodges_country` on `lodges` (lodge terms, slugs are full names like `argentina`).
+Both were also registered at `init` priority 0, and `custom_post_type_lodges()` runs last, so
+`lodges_country` won the shared rewrite base. `/cp_birds_country/<lodge-slug>/` then resolved
+to a lodge term with no matching template -> 404. The bird country terms are **not** in any
+sitemap (Yoast generates no `cp_birds_country-sitemap.xml`), so the whole `lodges_country`
+sitemap was dead weight.
+
+**Fix:** set `lodges_country` to `'rewrite' => false` (lodges group by `term_id` on the lodges
+page; no archive URL is needed), and exclude the taxonomy from both Yoast and core sitemaps
+(`wpseo_sitemap_exclude_taxonomy`, `wp_sitemaps_taxonomies`). A guarded one-time
+`flush_rewrite_rules( false )` runs on `init` (option `od_rewrite_version`) so the slug change
+takes effect on an FTP theme upload, which does not re-activate the theme.
+
+**Also:** `index.php` (the `/blog/` posts listing) and `templates/template-video-latest.php`
+(`/videos/`) rendered no page heading, so those documents had no H1. Added a visually hidden
+`<h1 class="sr-only">` to each (Bootstrap 3.3.2 is bundled locally, so `.sr-only` exists).
+
+**Note:** after this fix `lodges_country-sitemap.xml` should disappear from the sitemap index.
+If the client wants the ~23 lodge-country URLs to remain indexable, that needs a dedicated
+`taxonomy-lodges_country.php` template plus re-adding `lodges_country` to the sitemap — a
+content/SEO decision, not a bug fix.
