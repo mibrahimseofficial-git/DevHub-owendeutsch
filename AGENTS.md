@@ -328,3 +328,16 @@ External Links detail WITH working replacements (Section 3), the 21 Maintenance 
 severity + owner (Section 4), the 6 BD points (Section 5), and Recommended Next Steps.
 Styled to match the client docs (navy #142A45 / orange #D96B1E / grey #555B63).
 
+### PDF#27 follow-up — removed redundant Bootstrap 5 from /globe/ (2026-11-02)
+
+/globe/ loaded BOTH Bootstrap 5.3.0 (bundle, via the old jsdelivr CDN that PDF#27 self-hosted)
+AND Bootstrap 3.3.2 (local `js/bootstrap.min.js`, enqueued globally at functions.php:134).
+Verified BS5 was completely unused: zero `data-bs-*` attributes anywhere in the theme, zero
+`bootstrap.*` JS API calls, no tooltip/popover/dropdown, and `img-fluid` is not even defined
+in any theme CSS. The globe's tabs use Bootstrap 3 markup (`data-toggle="tab"`, `.tab("show")`),
+which BS5 does not handle (BS5 needs `data-bs-toggle`). Removed the `<script>` tag from
+template-globe.php and deleted the unused 80 KB `js/bootstrap-5.3.0.bundle.min.js`
+(zip 151 -> 150 entries). /globe/ now loads a single Bootstrap (3.3.2), same as the rest of
+the site. Note the audit itself flagged this CDN script ("cdn.jsdelivr.net/.../bootstrap.bundle.js
+Timeout"), so this completes that finding rather than just self-hosting it.
+
