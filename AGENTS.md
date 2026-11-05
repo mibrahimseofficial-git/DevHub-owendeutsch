@@ -341,3 +341,11 @@ template-globe.php and deleted the unused 80 KB `js/bootstrap-5.3.0.bundle.min.j
 the site. Note the audit itself flagged this CDN script ("cdn.jsdelivr.net/.../bootstrap.bundle.js
 Timeout"), so this completes that finding rather than just self-hosting it.
 
+### PDF#23 follow-up — width/height on search gallery images (2026-11-02)
+
+`search.php:527` (the main AJAX bird-search gallery thumbnail, used on all search/filter results)
+had alt but no width/height. Added `width`/`height` from the `square-medium` attachment array
+(same pattern already used in `taxonomy-cp_birds_country.php:93` and `grid_template.php:104`).
+This reduces layout shift (CLS) on the highest-traffic dynamic pages. Remaining instances are
+images inserted directly into post bodies, which WordPress core handles.
+
