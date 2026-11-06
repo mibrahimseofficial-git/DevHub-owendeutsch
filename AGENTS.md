@@ -376,13 +376,29 @@ main domain must be set in the WP Engine portal, not by orange-clouding DNS. The
 Response Header Transform Rule + HSTS toggle remain correct and useful — they cover the
 proxied hostnames (`staging.owendeutsch.com`, `blog.`, `cdn.`) at 5 headers each.
 
-**Two HSTS sources are now active.** WP Engine serves `max-age=300` on the main site;
-Cloudflare serves `max-age=2592000` on proxied subdomains. Keep these deliberately in sync
-when raising either. `includeSubDomains` and `preload` are off on both.
+**Three HSTS values are now in play.** Header Rules serve `max-age=300` on content pages;
+Cloudflare serves `max-age=2592000` on proxied subdomains; and `/wp-login.php` returns
+`max-age=31536000` from a platform-set header. Keep all three in mind so they do not drift
+apart unnoticed. `includeSubDomains` and `preload` are off.
 
-**Known gaps (by design):** static files (`robots.txt`, CSS, JS) and error responses get no
-headers, because the WP Engine rules run at the PHP/WordPress layer and are set to
-"Only on successes".
+**Known gaps:** static files (`robots.txt`, CSS, JS) and error responses get no headers. The
+error-page gap is by design ("Only on successes"). For static files the exact reason is not
+confirmed from outside the network — they appear to be served through a path that bypasses the
+rules phase, not through WordPress, so the rules never see them. (Web Rules run in nginx ahead
+of PHP, so "they run at the PHP layer" is wrong.) Impact is minor but not zero: `nosniff` is
+useful on JS/CSS. Cloudflare cannot close this gap because the main domain is not proxied
+through the account. No fix attempted.
+
+**Other headers seen on the apex (not from Header Rules, no conflict):**
+- `/wp-login.php` → `x-frame-options: SAMEORIGIN`, `x-content-type-options: nosniff`, and
+  `strict-transport-security: max-age=31536000`. The one-year HSTS is platform-set, not the
+  rule (which says 300). Worth knowing before raising the rule value, since a browser updates
+  its stored policy on every response — visiting the login page already sets one year.
+- Blocked paths (e.g. `/.env`) → 403 with `x-frame-options: SAMEORIGIN`,
+  `referrer-policy: same-origin`, `x-content-type-options: nosniff` (platform-set).
+- Normal content pages carry only the three Header Rule headers. Where both apply, the rule
+  value wins — so `strict-origin-when-cross-origin` overrides `same-origin`. No breakage.
+- 404s carry none.
 
 **Unrelated items checked:**
 - XML-RPC is **already blocked** (403 on prod and staging) — no action needed.
