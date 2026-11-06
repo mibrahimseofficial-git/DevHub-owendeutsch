@@ -71,10 +71,16 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
 - HTTP header sends `charset=UTF-8`. The legacy
   `<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">` has been
   REMOVED on staging (Task 1); LIVE still carries it.
-- W3Schools placeholder keywords meta present on every page (staging + live) — OPEN.
+- W3Schools placeholder keywords meta — **CLOSED (2026-11-06)**. No `<meta name="keywords">`
+  tag on any page checked on staging (`/`, `/videos/`, `/blog/`, `/grid/`, `/globe/`,
+  `/lodges/`, `/about-owen/`, all 200). The only `keywords` string in the HTML is the search
+  box placeholder `"Enter bird species name or keywords"` — a false positive.
 - `%FF` appears 0 times in emitted HTML; raw 0xFF byte in query string -> 400.
 - Correctly-encoded location URL returns 200 (full 1.7MB results page).
-- No security headers (HSTS/X-Frame-Options/nosniff/CSP) on any page.
+- Security headers — **SET (2026-11-06)** on both staging and production via WP Engine
+  Header Rules: `Strict-Transport-Security: max-age=31536000`, `X-Content-Type-Options:
+  nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`. Once each, no duplicates.
+  (Superseded the earlier "no security headers on any page" note.)
 - debug.log, xmlrpc.php -> 403; REST user enum -> 401. (Good.)
 - Plugin readme.txt files publicly readable (200).
 
