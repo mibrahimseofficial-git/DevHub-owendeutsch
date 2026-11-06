@@ -373,8 +373,16 @@ on both cache HIT and MISS, so no purge is outstanding. No duplicates anywhere.
 two hostnames bypass the Cloudflare zone entirely and are fronted by **WP Engine's own
 Cloudflare** (hence `server: cloudflare` + `cf-ray` on the apex). That is why headers for the
 main domain must be set in the WP Engine portal, not by orange-clouding DNS. The Cloudflare
-Response Header Transform Rule + HSTS toggle remain correct and useful — they cover the
-proxied hostnames (`staging.owendeutsch.com`, `blog.`, `cdn.`) at 5 headers each.
+Response Header Transform Rule + HSTS toggle still cover the proxied hostnames reached via the
+`*.owendeutsch.com` wildcard (`blog.`, `cdn.`, and anything else undefined) at 5 headers each.
+
+**Do not confuse the two staging hostnames.** The real staging environment is
+`owendeutsc2stg.wpenginepowered.com` (WP Engine origin, 141.193.213.10). There is **no
+`staging` DNS record** — `staging.owendeutsch.com` only resolves because of the wildcard, so it
+is a phantom name served through Cloudflare, not the staging site. All reports prior to
+2026-11-06 used `owendeutsc2stg.wpenginepowered.com`. As of 2026-11-06 the real staging
+environment has **no security headers**; add them via WP Engine Header Rules on that
+environment if staging parity is wanted.
 
 **Three HSTS values are now in play.** Header Rules serve `max-age=300` on content pages;
 Cloudflare serves `max-age=2592000` on proxied subdomains; and `/wp-login.php` returns
