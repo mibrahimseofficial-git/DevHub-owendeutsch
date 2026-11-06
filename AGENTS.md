@@ -351,6 +351,46 @@ This reduces layout shift (CLS) on the highest-traffic dynamic pages. Remaining 
 images inserted directly into post bodies, which WordPress core handles.
 
 
+### POST-DEPLOY VERIFICATION — theme updated on staging (2026-11-05)
+
+Client uploaded the updated `owendeutsch.zip` to staging. Re-verified everything.
+
+**Confirmed live on staging:**
+- `lodges_country-sitemap.xml` -> **404**, and gone from `sitemap_index.xml` (now 13 sitemaps:
+  post, page, lodges, cp_birds x9, author). Country exclusion working.
+- Dead country URLs (`/cp_birds_country/argentina/`, `peru`, `belize`, `mexico`, `caribbean`)
+  -> **404** and no longer listed. Bird country archives (`/ar/`, `/pe/`, `/be/`) -> **200**.
+- H1: `/blog/`=1, `/videos/`=1, `/globe/`=1, `/grid/`=1, `/`=1. (Were 0 on blog/videos.)
+- Home-popup dead code gone: 0 `us02web.zoom` and 0 `home-popup` refs in homepage HTML and
+  in the live `js/custom.js`.
+- Country archive images now carry `width`/`height` (PDF#6/#13) — live.
+- Full crawl of all non-bird pages + 600-bird sample (**1,053 pages**): **1,051 x 200**.
+  The 2 non-200 were both non-issues: one transient 504 that returned 200 on retry, and one
+  malformed URL that was a **crawl artifact** (a missing newline when concatenating two URL
+  files joined two valid URLs; both resolve 200).
+- All 15 lodge pages that returned 504 during the first sweep returned **200** on individual
+  retry -> intermittent WP Engine origin timeouts, not broken pages.
+
+**Quality scan (23 representative pages: home, blog, videos, globe, grid, countries, about,
+search, my-recent-photos, 3 country archives, lodges index, 2 lodges, 2 posts, 5 bird pages):**
+every page = exactly **1 H1**, **1 JSON-LD** block, **0** keywords meta, **0** images without
+alt. Consistent with the earlier repo fixes.
+
+**IMPORTANT — production still runs the OLD theme.** Verified on `owendeutsch.com`:
+`lodges_country-sitemap.xml` still present, `/cp_birds_country/argentina/` + `/peru/` still
+404, `/blog/` emits **100 H1s** and `/videos/` **22 H1s** (the pre-fix loop-title markup).
+Promoting the theme to production fixes all of that.
+
+**Staging vs production indexing note.** Staging serves `noindex, nofollow` site-wide
+(`robots.txt` = `Disallow: /` + Yoast meta). Production serves `index, follow` and a real
+robots.txt. So audit counts measured against staging (e.g. duplicate titles/H1s) differ from
+what production will emit; don't quote staging counts as production counts.
+
+**Remaining theme-level item found:** `index.php` blog-listing thumbnails use
+`wp_get_attachment_image_src(...,'full')` and emit `<img>` with **no width/height** -> CLS on
+`/blog/`. Small, safe follow-up (same pattern already applied to the search gallery).
+Minor: `/contact/` 404s (not in sitemap; real page is `/about-owen/`).
+
 ### Country taxonomy 404 fix + H1 on blog/video pages (2026-11-03)
 
 **Symptom:** 23 of the 31 URLs in `lodges_country-sitemap.xml` returned 404 on staging, e.g.
