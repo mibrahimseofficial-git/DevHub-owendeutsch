@@ -351,6 +351,51 @@ This reduces layout shift (CLS) on the highest-traffic dynamic pages. Remaining 
 images inserted directly into post bodies, which WordPress core handles.
 
 
+### SECURITY HEADERS — live on production (2026-11-06)
+
+Verified independently from outside the network.
+
+**Final state on the apex (`owendeutsch.com`)** — set via **WP Engine → Web Rules → Header
+Rules**, operation "Set", "Only on successes", no conditions:
+
+| Header | Value | Occurrences |
+|---|---|---|
+| `Strict-Transport-Security` | `max-age=300` | 1 |
+| `X-Content-Type-Options` | `nosniff` | 1 |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | 1 |
+
+Coverage: homepage, `/blog/`, `/grid/`, `/globe/`, `/lodges/`, lodge detail, `/about-owen/`,
+blog article, `/sitemap_index.xml`, `/wp-json/` — all 200, all 3 headers. Homepage serves them
+on both cache HIT and MISS, so no purge is outstanding. No duplicates anywhere.
+
+**Why the earlier Cloudflare work did not cover the main site.** The apex A records and
+`www` CNAME are **DNS only**, which overrides the proxied `*.owendeutsch.com` wildcard. Those
+two hostnames bypass the Cloudflare zone entirely and are fronted by **WP Engine's own
+Cloudflare** (hence `server: cloudflare` + `cf-ray` on the apex). That is why headers for the
+main domain must be set in the WP Engine portal, not by orange-clouding DNS. The Cloudflare
+Response Header Transform Rule + HSTS toggle remain correct and useful — they cover the
+proxied hostnames (`staging.owendeutsch.com`, `blog.`, `cdn.`) at 5 headers each.
+
+**Two HSTS sources are now active.** WP Engine serves `max-age=300` on the main site;
+Cloudflare serves `max-age=2592000` on proxied subdomains. Keep these deliberately in sync
+when raising either. `includeSubDomains` and `preload` are off on both.
+
+**Known gaps (by design):** static files (`robots.txt`, CSS, JS) and error responses get no
+headers, because the WP Engine rules run at the PHP/WordPress layer and are set to
+"Only on successes".
+
+**Unrelated items checked:**
+- XML-RPC is **already blocked** (403 on prod and staging) — no action needed.
+- DMARC is `v=DMARC1; p=none;` (monitor only). Consider `p=quarantine` after reviewing reports.
+- `mail`, `msoid`, `_domainconnect` are proxied (unusual). Tested and working — `mail` returns
+  301 with Exchange headers intact, `msoid` returns 200 from Microsoft. MX is DNS-only, so
+  mail delivery is unaffected.
+- `*.owendeutsch.com` is proxied, so undefined subdomains resolve to Cloudflare. Review whether
+  the wildcard is still needed (it also makes `includeSubDomains` HSTS riskier than it looks).
+
+DNS baseline captured in `docs/cloudflare-dns-records.md` for future diffing.
+Report: `Owen-Deutsch-Security-Headers-Addendum-2026-11-06.docx`.
+
 ### POST-DEPLOY VERIFICATION — theme updated on staging (2026-11-05)
 
 Client uploaded the updated `owendeutsch.zip` to staging. Re-verified everything.
