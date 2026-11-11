@@ -313,6 +313,27 @@ tripadvisor, weather-us); 429s are Instagram rate-limits on `@owendeutsch` / `@n
 (fine in a real browser); `dunesnationalpark.org` flipped 522 -> 403 between runs (bot block).
 Raw data: /workspace/links.json (note: /workspace, not /tmp — /tmp is wiped on container restart).
 
+### Dead-link remediation table (researched 2026-11-11, LIVE)
+
+Re-checked all 8 actionable links. **3 have a confirmed working replacement** (found in the
+target site's own sitemap and verified 200). **4 are genuinely down** — no replacement exists,
+the client must decide. These are content/DB values, NOT theme code, so they need a WP admin
+edit or Better Search Replace — a theme push will never fix them.
+
+| Lodge page (live) | Dead URL | Verdict | Replacement (verified 200) |
+|---|---|---|---|
+| `/lodges/nairobi-national-park-kenya/` | `www.porini.com/kenya/parks-and-reserves/nairobi-national-park/` | moved | `https://www.porini.com/african-safari-holidays/kenya/parks-and-reserves/nairobi-national-park/` |
+| `/lodges/north-pond-illinois-usa/` | `lincolnparkconservancy.org/north-pond-restoration-10/` | moved | `https://lincolnparkconservancy.org/projects/north-ponds-restoration/` |
+| `/lodges/western-shores-of-isimangaliso-wetland-park-south-africa/` | `isimangaliso.com/jewel/western-shores-and-charters-creek/` | moved | `https://www.isimangaliso.com/places/western-shores-charters-creek/` |
+| `/lodges/tobago-trinidad-and-tobago/` | `flickr.com/photos/cheesy42/3357058572/` | photo deleted | photostream root `https://www.flickr.com/photos/cheesy42/` is 200 — repoint or drop the credit |
+| `/lodges/lemala-kuria-hills-lodge-tanzania/` | `www.lemalacamp.com/kuria-hills-tented-lodge` | **host down** | none — DNS resolves (104.248.46.30) but no HTTP response on root or deep link |
+| `/lodges/cabanas-san-isidro-lodge-ecuador/` | `www.cabanassanisidro.com` | **host down** | none — DNS resolves (162.215.226.3) but no HTTP response |
+| `/lodges/owlet-lodge-at-abra-patricia-reserve-peru/` | `www.owletlodge.org/` | **host down** | none — 522, Cloudflare cannot reach origin |
+| `/lodges/ramsey-canyon-arizona-usa/` | `www.mendosa.com/` | **domain gone** | none — NXDOMAIN, domain no longer exists |
+
+Note: `isimangaliso.com` 301-redirects to `www.isimangaliso.com`; the old path 404s on both.
+The replacement is under `/places/`, not `/jewel/` — the site was restructured.
+
 ## External link crawl (baseline, Task PDF#4)
 Crawled all 454 sitemap pages -> 348 unique external URLs (177 hosts). 3 retries each.
 Result: 221 OK, 20x 404, 76x 403 (mostly bot-blocking: B&H affiliate, TripAdvisor,
