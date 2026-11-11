@@ -328,11 +328,33 @@ edit or Better Search Replace — a theme push will never fix them.
 | `/lodges/tobago-trinidad-and-tobago/` | `flickr.com/photos/cheesy42/3357058572/` | **FIXED (2026-11-11)** | Repointed to photostream root `https://www.flickr.com/photos/cheesy42/` — replaced by client via String Locator on **live**. Verified live: old photo id `3357058572` count=0, stream link count=1, stream URL 200. Credit text still renders as "® Flickr". |
 | `/lodges/lemala-kuria-hills-lodge-tanzania/` | `www.lemalacamp.com/kuria-hills-tented-lodge` | **FIXED (2026-11-11)** — was NOT dead, company rebranded | Replaced with `https://www.lemalacamps.com/stay/kuria-hills-lodge` (note the added "s" in `lemalacamps`). Old domain `lemalacamp.com` -> 104.248.46.30, ports 80/443 closed (server offline). New domain `lemalacamps.com` -> 165.232.39.226, 200. Verified live: OLD=0 NEW=2, new URL 200 (no-slash form 301s to trailing-slash). Only ONE lodge page references lemala, so no collateral damage. Client applied via String Locator on live. |
 | `/lodges/cabanas-san-isidro-lodge-ecuador/` | `www.cabanassanisidro.com` | **FIXED (2026-11-11)** — was NOT dead, company rebranded twice | Replaced `www.cabanassanisidro.com` -> `www.sanisidrolodge.com` (client, String Locator, live). Chain: `cabanassanisidro.com` (443 CLOSED, 80 open) 301 -> `cabanasanisidro.com` -> `www.sanisidrolodge.com` (200). Note: `credit_url` ALREADY pointed at `sanisidrolodge.com`; only the H1 `site_url` was stale. Verified live: OLD=0, `sanisidrolodge.com` count=3 (H1 href + credit href + credit link text), new URL 200. |
-| `/lodges/owlet-lodge-at-abra-patricia-reserve-peru/` | `www.owletlodge.org/` | **DEAD — no replacement (confirmed 2026-11-11)** | Domain **parked/expired**. Wayback: real site captured through 2025-02-23; by 2025-03-20 `owletlodge.org` 302s to `ww25.owletlodge.org` (parking pattern) and the 2025-10-06 capture title is literally "Parking Page". Currently 522 (Cloudflare, origin unreachable) on all of `www.`/bare/`http`. Operator is **ECOAN** (Asociación Ecosistemas Andinos) — live at `https://ecoanperu.org/` (200) — but their site has **no Owlet Lodge page** (only an empty `/ecoturismo/`; REST search for owlet/abra/lodge = 0 hits). `owletlodge.com` is a **different business** (a countryside vacation rental, not the Peru birding lodge). Client decision needed: remove credit, or repoint to ECOAN's site. |
+| `/lodges/owlet-lodge-at-abra-patricia-reserve-peru/` | `www.owletlodge.org/` | **REPLACEMENT FOUND (2026-11-11)** — was flagged dead | `owletlodge.org` is parked (Wayback: real site to 2025-02, 302 -> `ww25.owletlodge.org` parking by 2025-03, "Parking Page" by 2025-10; now 522). BUT the page's **credit_name is `© American Bird Conservancy`** — ABC is live and covers this exact place. Best replacement: `https://abcbirds.org/where-we-work/latin-america-caribbean/latin-american-reserve-stewardship-initiative/` (200; names Abra Patricia, Long-whiskered Owlet, ECOAN — evergreen program page). Alt: `https://abcbirds.org/news/idb-invest-bird-tourism-peru/` (200; press release that literally names "Owlet Lodge in Abra Patricia", but is a news item that may age). **Do NOT use `#`** — see theme note below. |
 | `/lodges/ramsey-canyon-arizona-usa/` | `www.mendosa.com/` | **domain gone** | none — NXDOMAIN, domain no longer exists |
 
 Note: `isimangaliso.com` 301-redirects to `www.isimangaliso.com`; the old path 404s on both.
 The replacement is under `/places/`, not `/jewel/` — the site was restructured.
+
+## Lodge link fields — how the theme renders them (READ BEFORE editing site_url / credit_url)
+
+`single-lodges.php` renders both link fields through `od_normalize_url()` (functions.php:1594):
+
+```php
+function od_normalize_url( $url ) {
+    $url = trim( (string) $url );
+    if ( $url === '' ) return '';                                   // only the EMPTY string returns ''
+    if ( stripos( $url, 'http://' ) === 0 )  return 'https://' . substr( $url, 7 );
+    if ( stripos( $url, 'https://' ) === 0 ) return $url;
+    if ( strpos( $url, '//' ) === 0 )        return 'https:' . $url;
+    return 'https://' . ltrim( $url, '/' );                          // ANY other non-empty value gets https:// glued on
+}
+```
+
+Consequences for editors (verified against the live theme source, 2026-11-11):
+
+* **`site_url` empty** -> `$lodge_site_url` is `''` (falsy) -> template's `if ( $lodge_site_url )` fails -> the H1 renders as **plain text, no `<a>`**. Confirmed live: `/lodges/maumee-ohio-usa/`, `/lodges/north-pond-illinois-usa/`, `/lodges/uyuni-bolivia/`, `/lodges/ballestas-island-peru/` all have a bare `<h1>` with no link. **This is the correct way to "remove" a link.**
+* **`credit_url` empty** -> the `if ( get_field('credit_url') )` guard skips the opening `<a>` but the closing `</a>` after `the_field('credit_name')` still prints -> **stray `</a>`**. Confirmed live on `/lodges/uyuni-bolivia/`: `<h3 class="desktop-show"> © Amy Rollo </a>`. Browsers recover silently (the credit text stays unlinked), but the markup is invalid. To drop a credit link, prefer clearing `credit_url` and accept the stray tag, or blank `credit_name` too.
+* **`#` is NOT a way to disable a link.** `'#'` is non-empty, so `od_normalize_url('#')` returns `'https://#'` — the H1 then renders `<a href="https://#">`, a broken link pointing at a nonsense URL. `mailto:` and `javascript:` are mangled the same way (`https://mailto:...`). Do not use `#` as a placeholder.
+* **Never leave a value without a scheme.** `od_normalize_url('owletlodge.org')` -> `https://owletlodge.org`, which happens to work, but a value like `example.com/path` relies on that gluing and is easy to get wrong; always store a full `https://...` URL.
 
 ## External link crawl (baseline, Task PDF#4)
 Crawled all 454 sitemap pages -> 348 unique external URLs (177 hosts). 3 retries each.
