@@ -278,13 +278,34 @@ the 31 client tasks; surface to the client as extras, do not fold into a PDF tas
 | # | Finding | Impact | Status |
 |---|---------|--------|--------|
 | OA-1 | Zoom webinar registration 404 in the (commented-out) home popup, footer.php L122-151, plus orphaned trigger in js/custom.js L358-370 | URL string present on 453 pages, but never rendered (inside an HTML comment) — no user/SEO impact | **CLOSED (repo, 2026-11-05)** — confirmed dead code on staging (zoom URL present only inside HTML comments; 0 rendered links; `#home-popup-modal` never rendered, so the custom.js trigger was a no-op). Removed the commented modal block (30 lines), the orphaned cookie/click trigger (custom.js, 13 lines) and an orphaned `#home-popup` click handler (3 lines). No user or SEO impact either way; this is hygiene. |
-| OA-2 | Typo'd self-link `https://www.owendeustch.com` on `/lodges/arizona-usa/` H1 (missing the "s"; edit distance 2 from `owendeutsch.com`, NXDOMAIN) | Headline lodge link points at a non-existent domain | **CLOSED — NOT PRESENT (2026-11-05)**. Staging `/lodges/arizona-usa/` H1 now reads `<a href="https://owendeutsch.com">Arizona &#8211; USA</a>` — correct domain. Scanned ALL 148 lodge pages on staging: 0 occurrences of `owendeustch` anywhere. Either already fixed or the original crawl hit a transient/other source. |
+| OA-2 | Typo'd self-link `https://www.owendeustch.com` on `/lodges/arizona-usa/` H1 (missing the "s"; edit distance 2 from `owendeutsch.com`, NXDOMAIN) | Headline lodge link points at a non-existent domain | **REOPENED — LIVE ONLY (2026-11-06)**. Staging is clean (`<a href="https://owendeutsch.com">`), but **LIVE still serves the typo**: `<h1 class="large text-center"><a href="https://www.owendeustch.com" target="_blank" rel="noopener">Arizona – USA</a>`. `owendeustch.com` is NXDOMAIN, so the headline link on that lodge page is dead to every visitor. The earlier "CLOSED" verdict was based on staging alone — **staging≠live, and the theme push did NOT fix this** because the URL lives in the lodge's ACF content field, not in theme code. Fix in WP admin on the Arizona – USA lodge record. |
 | OA-3 | ABA (`aba.org`) 502 cluster — 6 URLs (root returns 200, sub-pages 502) | Likely a server-side outage at ABA, not our bug | **CLOSED — RECOVERED (2026-11-05)**. Re-checked: `aba.org/` 200, `/birding/` 200, `/events/` 200. (`/aba-blog/` 404, but ABA restructured its site — a dead URL to drop from content, not a server outage.) Was a transient server-side outage at ABA. |
-| OA-4 | Intermittent HTTP 504 on ~13 lodge pages (`/lodges/huembo-reserve-peru/`, `/lodges/wildsumaco-lodge-ecuador/`, `/lodges/monterey-bay-california-usa/`, etc.) | Edge 504 to visitors while the origin is under load | **OPEN — INFRA, not theme (2026-11-05)**. First observed during a full 148-page lodge crawl; re-testing individually showed them flipping between 504 and 200 (`jorupe-reserve-ecuador`, `bosque-del-apache-new-mexico-usa`, `wildsumaco-lodge-ecuador` all returned 200 on retry). Header shows `server: cloudflare`, `HTTP/2 504`, fast (~0.1-0.2s), i.e. an edge/origin-timeout condition on WP Engine, not a PHP/theme error. Surface to host (WP Engine) as intermittent origin timeouts; do NOT report as broken pages. |
+| OA-4 | Intermittent HTTP 504 on ~13 lodge pages (`/lodges/huembo-reserve-peru/`, `/lodges/wildsumaco-lodge-ecuador/`, `/lodges/monterey-bay-california-usa/`, etc.) | Edge 504 to visitors while the origin is under load | **CLOSED — NOT REPRODUCING (2026-11-06)**. Re-tested 7 named lodges x3 passes on BOTH live and staging: 21/21 live and 21/21 staging returned 200, first byte 0.1-1.7s. A full re-crawl of all 148 live lodge pages returned 0 non-200. Original 504s were a transient origin-timeout condition; no theme or content action. Was INFRA (WP Engine origin), not theme. |
 
 Detection method for OA-2 (typo'd self-link): extract hrefs, compute edit distance of each
 host against the canonical domain, and DNS-check the near-miss. Status code alone cannot
 distinguish a self-link typo from an unrelated dead partner domain (distance 2 vs 12-14).
+
+## External link crawl — LODGE PAGES re-measured on LIVE (2026-11-06)
+Crawled all 148 live lodge pages (from `/lodges-sitemap.xml`) -> 2,297 distinct internal
+links + 96 distinct external links. First crawl run against LIVE, not staging.
+Internal: 2,295x 200, 2x 403 (`/xmlrpc.php` + `?rsd` — deliberate block, expected, appears
+in every page head via `rel="pingback"`). **0 internal broken links.**
+External: 78x 200, 4x 404, 4x no-response (000), 5x 403, 2x 429, 2x 522, 1x 401.
+Actionable (verified by hand, not just the crawler):
+- `www.owendeustch.com` on `/lodges/arizona-usa/` — **REAL, see OA-2. Live only.**
+- `www.lemalacamp.com/kuria-hills-tented-lodge` — root AND deep link both 000; host down.
+- `www.cabanassanisidro.com` — 000; DNS resolves but no HTTP response.
+- `www.mendosa.com` — NXDOMAIN; domain is gone.
+- `www.owletlodge.org` — 522 (Cloudflare cannot reach origin).
+- `porini.com/kenya/parks-and-reserves/nairobi-national-park/` — 404 (root is 200; page moved).
+- `lincolnparkconservancy.org/north-pond-restoration-10/` — 404 (root is 200; page moved).
+- `isimangaliso.com/jewel/western-shores-and-charters-creek/` — 404.
+- `flickr.com/photos/cheesy42/3357058572/` — 404 (photo deleted).
+Non-actionable: 403s are bot-blocking (pixabay, kagerasafaris, thesafaricollection,
+tripadvisor, weather-us); 429s are Instagram rate-limits on `@owendeutsch` / `@nathan_goldbird`
+(fine in a real browser); `dunesnationalpark.org` flipped 522 -> 403 between runs (bot block).
+Raw data: /workspace/links.json (note: /workspace, not /tmp — /tmp is wiped on container restart).
 
 ## External link crawl (baseline, Task PDF#4)
 Crawled all 454 sitemap pages -> 348 unique external URLs (177 hosts). 3 retries each.
