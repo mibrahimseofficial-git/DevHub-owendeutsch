@@ -322,7 +322,7 @@ edit or Better Search Replace — a theme push will never fix them.
 
 | Lodge page (live) | Dead URL | Verdict | Replacement (verified 200) |
 |---|---|---|---|
-| `/lodges/nairobi-national-park-kenya/` | `www.porini.com/kenya/parks-and-reserves/nairobi-national-park/` | moved | `https://www.porini.com/african-safari-holidays/kenya/parks-and-reserves/nairobi-national-park/` |
+| `/lodges/nairobi-national-park-kenya/` | `www.porini.com/kenya/parks-and-reserves/nairobi-national-park/` | **FIXED (2026-11-11)** | `https://www.porini.com/african-safari-holidays/kenya/parks-and-reserves/nairobi-national-park/` — replaced by client via String Locator (DB search+replace) on **live**, table `wp_postmeta`.`meta_value`. Verified live: OLD=0 NEW=2 (both `site_url` H1 + `credit_url` map credit), new URL 200. Confirms String Locator DOES do DB search/replace (changelog v2.6.0). |
 | `/lodges/north-pond-illinois-usa/` | `lincolnparkconservancy.org/north-pond-restoration-10/` | moved | `https://lincolnparkconservancy.org/projects/north-ponds-restoration/` |
 | `/lodges/western-shores-of-isimangaliso-wetland-park-south-africa/` | `isimangaliso.com/jewel/western-shores-and-charters-creek/` | moved | `https://www.isimangaliso.com/places/western-shores-charters-creek/` |
 | `/lodges/tobago-trinidad-and-tobago/` | `flickr.com/photos/cheesy42/3357058572/` | photo deleted | photostream root `https://www.flickr.com/photos/cheesy42/` is 200 — repoint or drop the credit |
