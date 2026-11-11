@@ -329,7 +329,7 @@ edit or Better Search Replace — a theme push will never fix them.
 | `/lodges/lemala-kuria-hills-lodge-tanzania/` | `www.lemalacamp.com/kuria-hills-tented-lodge` | **FIXED (2026-11-11)** — was NOT dead, company rebranded | Replaced with `https://www.lemalacamps.com/stay/kuria-hills-lodge` (note the added "s" in `lemalacamps`). Old domain `lemalacamp.com` -> 104.248.46.30, ports 80/443 closed (server offline). New domain `lemalacamps.com` -> 165.232.39.226, 200. Verified live: OLD=0 NEW=2, new URL 200 (no-slash form 301s to trailing-slash). Only ONE lodge page references lemala, so no collateral damage. Client applied via String Locator on live. |
 | `/lodges/cabanas-san-isidro-lodge-ecuador/` | `www.cabanassanisidro.com` | **FIXED (2026-11-11)** — was NOT dead, company rebranded twice | Replaced `www.cabanassanisidro.com` -> `www.sanisidrolodge.com` (client, String Locator, live). Chain: `cabanassanisidro.com` (443 CLOSED, 80 open) 301 -> `cabanasanisidro.com` -> `www.sanisidrolodge.com` (200). Note: `credit_url` ALREADY pointed at `sanisidrolodge.com`; only the H1 `site_url` was stale. Verified live: OLD=0, `sanisidrolodge.com` count=3 (H1 href + credit href + credit link text), new URL 200. |
 | `/lodges/owlet-lodge-at-abra-patricia-reserve-peru/` | `www.owletlodge.org/` | **FIXED (2026-11-11)** — replaced with EMPTY | Client replaced the string with an empty value via String Locator on **live**. Verified live (2 fresh fetches, `x-cache: MISS` / `cf-cache-status: MISS`): H1 now renders **plain text, no `<a>`** — `<h1 class="large text-center">Owlet Lodge at Abra Patricia Reserve – Peru</h1>`. Sitewide scan of all 455 sitemap URLs: **0 pages** still reference `owletlodge.org`. Credit still renders `© American Bird Conservancy` with the theme's pre-existing stray `</a>`. No `href="https://#"`, no `https://https://` double-prefix, JSON-LD still valid. **COLLATERAL: 1 page — `/abc-mike-parr-my-favorite-bird/`** (see note below). |
-| `/lodges/ramsey-canyon-arizona-usa/` | `www.mendosa.com/` | **domain gone** | none — NXDOMAIN, domain no longer exists |
+| `/lodges/ramsey-canyon-arizona-usa/` | `www.mendosa.com/` | **RECOMMEND: blank `credit_url`** | `mendosa.com` does **not resolve** (Cloudflare DoH `Status=2` SERVFAIL), yet RDAP shows it **still registered** (created 1997-06-05, expires 2027-06-04, last changed 2026-06-16). Wayback served a real page as late as **2026-01-23**, so it stopped resolving during 2026. The site was **"David Mendosa: Helping Defeat Diabetes Since 1995"** — a diabetes-writer site (Boulder, CO) whose owner also shot birds; the credit `© David Mendosa` is for his Ramsey Canyon hummingbird photo. **No successor exists:** `davidmendosa.*`, `mendosa.net`, `mendosa.org` all NXDOMAIN; no Flickr/Instagram/Bluesky photo account (Bluesky actor lookup 400); his writing survives only as medical content (diabetesselfmanagement.com + diabetesincontrol.com author pages 200 — wrong subject for a birding credit). **Fix:** blank `credit_url` (String Locator: `https://www.mendosa.com/` -> empty) so the credit renders as plain text `© David Mendosa`, matching the Owlet precedent. Only **1 page** references mendosa -> no collateral. The H1 `site_url` is already empty and the theme renders it as plain text (verified live + Wayback 2026-05-21). |
 
 Note: `isimangaliso.com` 301-redirects to `www.isimangaliso.com`; the old path 404s on both.
 The replacement is under `/places/`, not `/jewel/` — the site was restructured.
@@ -346,6 +346,24 @@ The String Locator search found ~48 rows; only **2 were public-rendered**. Both 
 **Baseline vs damage (do not misread the sitewide scan).** 54 pages show `href=""`, but **53 are pre-existing theme furniture** — the H1 on lodges with no `site_url`, and tag/related-post widgets — confirmed present in the 2026-03-07 Wayback snapshot of `/lodges/maumee-ohio-usa/` (6 empty hrefs before any of this work). The **only new one is Mike Parr**. To tell them apart, look at the anchor TEXT: `Ohio`/`Illinois`/`Clear` = baseline; `The Owlet Lodge` = damage.
 
 **Fix for Mike Parr (pending client).** Either restore a live URL on that anchor (e.g. the ABC reserve page `https://abcbirds.org/where-we-work/latin-america-caribbean/latin-american-reserve-stewardship-initiative/`), or remove the `<a ...>`/`</a>` pair so "The Owlet Lodge" reads as plain text. A bare `href=""` is the one outcome to avoid.
+
+### Stray `</a>` in the credit block is a THEME BUG, not link damage
+
+`single-lodges.php` lines ~67-75 wrap the credit in a conditional open tag but an **unconditional close tag**:
+
+```php
+<h3 class="desktop-show">
+<?php if ( get_field('credit_url') ) : ?>
+  <a href="<?php echo esc_url( od_normalize_url( get_field('credit_url') ) ); ?>" target="_blank">
+<?php endif; ?>
+  <?php the_field('credit_name'); ?>
+</a>            <!-- <-- always emitted, even when credit_url is empty -->
+</h3>
+```
+
+So when `credit_url` is empty the page ships `© Name </a>` with no opening `<a>` — an **orphan closing tag** that makes the surrounding anchor nesting unbalanced. **52 of the lodge pages do this today** (verified by parsing `<h3 class="desktop-show">…</h3>` on all 455 sitemap URLs), and it is **pre-existing**: the 2026 Wayback snapshot of `/lodges/abaco-bahamas/` already shows `© Owen Deutsch </a>`. Browsers tolerate it, so it is cosmetic — but it is why blanking `credit_url` (Owlet, and the proposed Ramsey fix) leaves the credit text intact.
+
+The one-line theme fix is to move `</a>` inside the `if`, mirroring the H1 which already does this correctly (`if ( $lodge_site_url ) : <a…></a> else : plain <?php endif;`). Two copies of the block exist (lines ~67 and ~104) — both need it. Tracked as a theme improvement, separate from PDF#4.
 
 ## Lodge link fields — how the theme renders them (READ BEFORE editing site_url / credit_url)
 
