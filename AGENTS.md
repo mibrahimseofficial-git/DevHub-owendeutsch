@@ -362,7 +362,13 @@ The String Locator search found ~48 rows; only **2 were public-rendered**. Both 
    The Owlet Lodge<a style="color: #fff600;font-weight: bold;" href="" target="_blank" rel="noopener noreferrer"> </a>is a great place to stay...
    ```
 
-   The leftover `<a … href="" …> </a>` holds only a single space, so it is invisible and unclickable, but it still counts as one `href=""` on the page (the only owlet-related one sitewide). To fully clear it, edit the post → **Edit as HTML** → delete the whole `<a … href="" …> </a>` fragment. Verified: page anchor balance is even (49 `<a>` / 49 `</a>`), visible text correct, `owletlodge` refs = 0.
+   The leftover `<a … href="" …> </a>` holds only a single space, so it is invisible and unclickable, but it still counts as one `href=""` on the page (the only owlet-related one sitewide). **As of 2026-11-12T00:15:32 the post was re-saved but the fragment is still in `post_content`** (confirmed via REST `posts/12172`). The exact literal to remove — it is unique in the DB, so String Locator can target it directly:
+
+   ```
+   <a style="color: #fff600;font-weight: bold;" href="" target="_blank" rel="noopener noreferrer"> </a>
+   ```
+
+   Two ways: (a) **String Locator** — search that whole fragment, replace with empty (matches only this one row); or (b) open the post → **⋮ → Code editor / Edit as HTML** → delete the fragment → Update. Verified after: page anchor balance is even (49 `<a>` / 49 `</a>`), visible text correct, `owletlodge` refs = 0.
 
 **Lesson for future String Locator replaces:** always check `wp_posts.post_content` too — the same string can be a body link on an unrelated page. The lodge template (postmeta) and post bodies (`wp_posts`) are separate tables, and a postmeta-only fix leaves body links broken.
 
