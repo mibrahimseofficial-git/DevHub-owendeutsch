@@ -380,7 +380,16 @@ The String Locator search found ~48 rows; only **2 were public-rendered**. Both 
 
 So when `credit_url` is empty the page ships `© Name </a>` with no opening `<a>` — an **orphan closing tag** that makes the surrounding anchor nesting unbalanced. **52 of the lodge pages do this today** (verified by parsing `<h3 class="desktop-show">…</h3>` on all 455 sitemap URLs), and it is **pre-existing**: the 2026 Wayback snapshot of `/lodges/abaco-bahamas/` already shows `© Owen Deutsch </a>`. Browsers tolerate it, so it is cosmetic — but it is why blanking `credit_url` (Owlet, and the proposed Ramsey fix) leaves the credit text intact.
 
-The one-line theme fix is to move `</a>` inside the `if`, mirroring the H1 which already does this correctly (`if ( $lodge_site_url ) : <a…></a> else : plain <?php endif;`). Two copies of the block exist (lines ~67 and ~104) — both need it. Tracked as a theme improvement, separate from PDF#4.
+The one-line theme fix is to move `</a>` inside the `if`, mirroring the H1 which already does this correctly (`if ( $lodge_site_url ) : <a…></a> else : plain <?php endif;`). Two copies of the block exist (lines ~67 and ~104) — both need it.
+
+**FIXED (2026-11-12) — in `owendeutsch.zip` on `development`, pending deploy.** Both copies now read:
+
+```php
+<?php the_field('credit_name'); ?>
+<?php if(get_field('credit_url')): ?></a><?php endif; ?>
+```
+
+so the close tag is emitted only when the open tag is. Rendering verified by simulation: with a URL -> `<a href="…" target="_blank">© Name</a>` (unchanged); with empty `credit_url` -> `<h3 class="desktop-show">© Name</h3>` (no orphan tag). `php -l` clean, all 43 theme PHP files lint clean, zip rebuilt with 150 entries / order preserved / `testzip()` clean / only `single-lodges.php` differs. **Note:** `single-lodges-bk.php` carries the same bug but is a stale backup (no `od_normalize_url`, not a WP template name so never loaded) — deliberately left untouched. After deploy, expect the sitewide `href=""` count to fall from 54 toward 1 (the only non-theme one was the Mike Parr post, since cleared).
 
 ## Lodge link fields — how the theme renders them (READ BEFORE editing site_url / credit_url)
 
