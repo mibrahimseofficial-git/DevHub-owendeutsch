@@ -33,6 +33,11 @@ browser, not only curl, when the question is "does the page show results".
 - `Owen-Deutsch-SEO-Audit-Presentation-Final.pdf` — the 16-page client audit (31 tasks).
 - `Owen-Deutsch-Website-Maintenance-Site-Health-Review.docx` — maintenance/site-health review (21 issues).
 
+These two are the client's own source documents and are the ONLY documents kept in the
+repo. All progress/verification/addendum reports we generated were removed from
+`development` on 2026-11-12 (client request) — see the note in the FINAL DELIVERABLE
+section. If asked for a report again, generate it fresh (do not commit it unless asked).
+
 ## Deliverable conventions
 - Client-style documents: navy (#142A45) + orange (#D96B1E), Calibri, footer
   "Owen Deutsch Photography · ... | Page N", prioritised roadmap at the end.
@@ -511,6 +516,11 @@ External Links detail WITH working replacements (Section 3), the 21 Maintenance 
 severity + owner (Section 4), the 6 BD points (Section 5), and Recommended Next Steps.
 Styled to match the client docs (navy #142A45 / orange #D96B1E / grey #555B63).
 
+**Removed from the repo (2026-11-12):** all generated progress/verification reports were
+deleted from `development` at the client's request — the repo now carries only the two
+source audit documents (see below). The reports remain retrievable from git history
+(e.g. `git show <commit>:Owen-Deutsch-Audit-Progress-Report.docx > file.docx`).
+
 ### PDF#27 follow-up — removed redundant Bootstrap 5 from /globe/ (2026-11-02)
 
 /globe/ loaded BOTH Bootstrap 5.3.0 (bundle, via the old jsdelivr CDN that PDF#27 self-hosted)
@@ -600,7 +610,7 @@ through the account. No fix attempted.
   the wildcard is still needed (it also makes `includeSubDomains` HSTS riskier than it looks).
 
 DNS baseline captured in `docs/cloudflare-dns-records.md` for future diffing.
-Report: `Owen-Deutsch-Security-Headers-Addendum-2026-11-06.docx`.
+Report (removed from repo 2026-11-12): `Owen-Deutsch-Security-Headers-Addendum-2026-11-06.docx`.
 
 ### POST-DEPLOY VERIFICATION — theme updated on staging (2026-11-05)
 
