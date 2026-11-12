@@ -162,6 +162,80 @@ thing (core jQuery, case-insensitive DOCTYPE), not a loose substring.
 security headers (edge), PDF#25 HTML minify (WP Rocket setting), PDF#19/#20/#21
 (content/Yoast), PDF#31 (process).
 
+### FULL CLIENT-PDF RE-VERIFICATION — every task vs LIVE — 2026-11-12
+
+Pulled the client PDF again and re-checked **all 31 tasks** against the live site
+(cache-busted, fresh random param each request). Result: **every theme-code task passes;
+the remaining gaps are all content/infra (client-owned).**
+
+**PDF#1–#3, #5–#12, #15, #27 — ALL PASS on live.** (location filters 200 with 0 `%FF`,
+no birdingtop500, no relative-www lodge URLs, no keywords meta, no ISO-8859-1 charset,
+viewport zooms, no cache metas, ec + southeast-california valid, /?s= noindex, /blog/page/2/ 200,
+llms.txt 200, single JSON-LD, all 14 country/globe/grid H1s present, 1 core jQuery,
+/globe/ self-hosted.)
+
+**Recovered on their own (no action needed):** nanpa.org 200, nikonusa.com FTZ 200,
+lincolnparkconservancy 200, orangehill / sandpiperabaco / sanisidrolodge / zebrahills /
+lemalacamps / wildsumaco all 200.
+
+**Changes since the last check (2026-11-12):**
+- **robots.txt `Crawl-delay: 10`** — **still present** (re-checked; NOT removed). See OPEN list.
+- **Security headers — PARTIAL, improved.** Now present: `Strict-Transport-Security`
+  (`max-age=31536000`), `X-Content-Type-Options: nosniff`, `Referrer-Policy:
+  strict-origin-when-cross-origin`. Still absent: `X-Frame-Options`, `Content-Security-Policy`,
+  `Permissions-Policy`.
+
+**HTML payload also much smaller than the audit claimed:** homepage **208 KB** (audit said 607 KB),
+activity search **~0.5 MB** (audit said 1.76 MB). **Still unminified** (`rocket-minify` absent,
+148 lines, no leading-indent lines → WP Rocket HTML minify still OFF).
+
+#### STILL OPEN — genuinely broken external links (content, client-owned)
+
+A full sitewide scan (455 pages: posts + lodges + pages; 274 unique external links) found these
+**genuinely broken** (404 / DNS / 5xx / timeout). Bot-blocked statuses (401/402/403/429 — B&H,
+Cornell, TripAdvisor, DOI, Unsplash, USA Today) are **not** defects.
+
+| Broken URL | On page(s) | Fix |
+|---|---|---|
+| `abcbirds.org/get-involved/bird-smart-glass/` | /backyard-bird-photography-mike-parrs-lockdown-therapy/ | site restructured → repoint to abcbirds.org/news/ |
+| `abcbirds.org/program/hawaii/take-action/` | /the-mosquito-line-blurs-…-hawaiis-birds/ | ditto |
+| `abcbirds.org/article/complementary-actions-protect-both-rare-birds-…/` | /huembo-home-of-the-marvelous-spatuletail/ | ditto |
+| `abcbirds.org/article/peruvian-postage-stamps-feature-endangered-birds/` | /huembo…/ | ditto |
+| `abcbirds.org/blog20/bird-conservation-superstars/` | /huembo…/ | ditto |
+| `abcbirds.org/it-takes-a-village-to-save-rare-hummingbirds/` | /huembo…/ | ditto |
+| `abcbirds.org/return-to-abra-patricia-a-culture-of-conservation-is-spreading/` | /huembo…/, /the-global-birding-experience-owlet-lodge-at-abra-patricia-in-peru/ | ditto |
+| `seattle-audubon-nature-shop.shoplightspeed.com/search/BirdNote/` | /acorn-woodpeckers-…/, /double-crested-cormorant-a-birdnote-story/ | shop closed → link birdnote.org |
+| `channelstore.roku.com/details/…/owen-deutschs-beautiful-birds` | /learning-about-birds-with-the-beautiful-birds-screensaver/ | channel page gone (timeout) → channelstore.roku.com root |
+| `www.africanpenguinsafe.org/` | /african-bird-focus-south-africa/ | **530** (origin down) — remove or repoint |
+| `www.ecoanperu.org/indexeng.html` | /abc-mike-parr-my-favorite-bird/ | 404 → root ecoanperu.org is 200 |
+| `bahamasgeotourism.com/entries/dream-villas/…` | /the-bahamas-birds/ | **503** (whole domain down) |
+| `conserva-aves.org/en/home-english/` | /bird-tourism-in-the-tropical-andes-means-hope/ | 404 → conserva-aves.org root 200 |
+| `www.chicagobirder.org/cos-labagh-woods-project` | /surprise-broad-billed-hummingbird-in-chicago/ | 404 → root 200 |
+| `www.visittoledo.org/birding-in-northwest-ohio/` | /spring-migration-magic-in-may/ | 404 → root 200 |
+| `www.birdsnotmosquitoes.org/frequently-asked-questions` | /saving-the-forest-birds-of-hawaii/ | 404 → root 200 |
+| `www.felzfotoz.com/portfolio-1/portfolio-italy` | /lessons-from-a-lens/ | 404 → root 200 |
+| `www.marylandbiodiversity.com/docs/engstrom_2023.pdf.` | /morning-flight-in-appalachia-…/ | **trailing dot typo** — remove the `.` |
+| `hummingbirdscanada.ca/hummingbirds/migration` | /chip-cold-and-canada-…/ | DNS fails |
+| `femalebirdsong.org/` | /the-female-of-the-species/ | DNS/connection fails |
+| `www.kws.go.ke/parks/nairobi-national-park` | /the-best-lens-and-camera-for-bird-photography/ | connection fails |
+| `amazon.com/…/dp/1787135047?tag=smarturl-20\ufeff` | /greater-flamingo-the-dramatic-migrator/ | **invisible U+FEFF** appended to URL — strip it |
+
+**Also found (not in the PDF, plugin-level):** `popup-maker/dist/packages/block-library-style.css`
+**404s** on every page (confirmed still live; first seen in the client's log export).
+
+#### STILL OPEN — client/infra (not theme code)
+
+| Item | Status on live |
+|---|---|
+| PDF#9 robots.txt `Crawl-delay: 10` | **STILL PRESENT** (not removed) |
+| PDF#14/#30 security headers | PARTIAL — HSTS + nosniff + Referrer-Policy present; **X-Frame-Options, CSP, Permissions-Policy absent** |
+| PDF#25 HTML minify | **Still OFF** (unminified; payload already 0.2–0.5 MB) |
+| PDF#13/#24 WebP | Not enabled (99.9% JPEG) |
+| PDF#13/#23 empty alt + missing dims | Still present (e.g. `logo.png alt=""`, loader images without width/height) |
+| PDF#11 Yoast Knowledge Graph | No Organization node yet (client must configure Yoast) |
+| PDF#20/#21 duplicate titles/H1s | Sample of 200: **0 duplicate titles**, 3 duplicate H1 pairs (content-level) |
+| PDF#31 monthly audit | Process, not code |
+
 ### POST-DEPLOY RE-VERIFICATION (staging now runs `development`) — 2026-11-02
 
 After the client pushed the theme, re-checked everything on staging. **Confirmed fixed:**
