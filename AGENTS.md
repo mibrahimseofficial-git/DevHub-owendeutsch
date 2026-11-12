@@ -356,7 +356,13 @@ The replacement is under `/places/`, not `/jewel/` — the site was restructured
 The String Locator search found ~48 rows; only **2 were public-rendered**. Both mattered:
 
 1. `/lodges/owlet-lodge-at-abra-patricia-reserve-peru/` (`site_url` + `credit_url` postmeta) -> H1 correctly becomes **plain text**; credit keeps its text. **Good.**
-2. `/abc-mike-parr-my-favorite-bird/` (`wp_posts.post_content`, id **12172**) -> **DAMAGED.** The post has an inline `<a href="https://www.owletlodge.org/" target="_blank"> The Owlet Lodge </a>` in its body. Emptying the URL left `<a ... href="" target="_blank"> The Owlet Lodge </a>` — an **empty `href`** (reloads the current page). Verified against Wayback snapshot **2026-07-16** (pre-change: 1 owletlodge ref, 0 empty hrefs) vs live (0 owletlodge, 1 empty href).
+2. `/abc-mike-parr-my-favorite-bird/` (`wp_posts.post_content`, id **12172**) -> **PARTLY FIXED (2026-11-11).** The post had an inline `<a href="https://www.owletlodge.org/" target="_blank"> The Owlet Lodge </a>` in its body. The client **unlinked the text**, so it now renders as plain text: `... rare Long-whiskered Owlet! The Owlet Lodge` — **not a link any more**, which is the main fix. **But a residual empty anchor remains** right after the text:
+
+   ```html
+   The Owlet Lodge<a style="color: #fff600;font-weight: bold;" href="" target="_blank" rel="noopener noreferrer"> </a>is a great place to stay...
+   ```
+
+   The leftover `<a … href="" …> </a>` holds only a single space, so it is invisible and unclickable, but it still counts as one `href=""` on the page (the only owlet-related one sitewide). To fully clear it, edit the post → **Edit as HTML** → delete the whole `<a … href="" …> </a>` fragment. Verified: page anchor balance is even (49 `<a>` / 49 `</a>`), visible text correct, `owletlodge` refs = 0.
 
 **Lesson for future String Locator replaces:** always check `wp_posts.post_content` too — the same string can be a body link on an unrelated page. The lodge template (postmeta) and post bodies (`wp_posts`) are separate tables, and a postmeta-only fix leaves body links broken.
 
