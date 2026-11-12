@@ -360,7 +360,15 @@ The String Locator search found ~48 rows; only **2 were public-rendered**. Both 
 
 **Lesson for future String Locator replaces:** always check `wp_posts.post_content` too — the same string can be a body link on an unrelated page. The lodge template (postmeta) and post bodies (`wp_posts`) are separate tables, and a postmeta-only fix leaves body links broken.
 
-**Baseline vs damage (do not misread the sitewide scan).** 54 pages show `href=""`, but **53 are pre-existing theme furniture** — the H1 on lodges with no `site_url`, and tag/related-post widgets — confirmed present in the 2026-03-07 Wayback snapshot of `/lodges/maumee-ohio-usa/` (6 empty hrefs before any of this work). The **only new one is Mike Parr**. To tell them apart, look at the anchor TEXT: `Ohio`/`Illinois`/`Clear` = baseline; `The Owlet Lodge` = damage.
+**Baseline vs damage (do not misread the sitewide scan).** Final verified state (2026-11-12, post-deploy): **53 pages** show `href=""`, and **all 53 are pre-existing theme furniture**, not damage:
+- **State/region buttons** on lodge pages (`Alaska`, `Illinois`, `Ohio`… — 5 each) and the tag/related-post widgets on blog posts (`Clear`, `Molting`). The state buttons are `<a class="whitebtn" href="">State</a>`; confirmed present in the 2026-03-07 Wayback snapshot of `/lodges/maumee-ohio-usa/`.
+- **`/lodges/dixon-illinois-usa/`** — 5 state buttons + `<a class="whitebtn" href="">winter plumage</a>` (a **Plumage** tag with no term URL). Pre-existing: the 2026-05-21 Wayback snapshot already had 6 `href=""` and 4 "winter plumage".
+- **`/which-bird-photography-gear-is-right-for-you/`** — 2 empty anchors `<a href=""></a>` (no text) next to the B&H product links. Pre-existing: the 2026-07-16 Wayback snapshot already had exactly 2.
+- **`/monterey-bay-california-usa/`** — one caption-ish anchor.
+
+To tell damage from furniture, look at the anchor TEXT: `Ohio`/`Illinois`/`Clear` = baseline. The only genuine damage found this cycle was Mike Parr (`The Owlet Lodge`), since fixed.
+
+**Cache-busting lesson (cost me a false alarm):** WP Engine + Cloudflare cache aggressively by **full query string**. Reusing one param value all session (e.g. `?z=1`) returns a **stale cached page** (`x-cache: HIT` / `cf-cache-status: HIT`) even after a deploy. Always use a **fresh random** query value per request when verifying, or you will audit the old theme and think the deploy failed.
 
 **Fix for Mike Parr (pending client).** Either restore a live URL on that anchor (e.g. the ABC reserve page `https://abcbirds.org/where-we-work/latin-america-caribbean/latin-american-reserve-stewardship-initiative/`), or remove the `<a ...>`/`</a>` pair so "The Owlet Lodge" reads as plain text. A bare `href=""` is the one outcome to avoid.
 
@@ -382,14 +390,18 @@ So when `credit_url` is empty the page ships `© Name </a>` with no opening `<a>
 
 The one-line theme fix is to move `</a>` inside the `if`, mirroring the H1 which already does this correctly (`if ( $lodge_site_url ) : <a…></a> else : plain <?php endif;`). Two copies of the block exist (lines ~67 and ~104) — both need it.
 
-**FIXED (2026-11-12) — in `owendeutsch.zip` on `development`, pending deploy.** Both copies now read:
+**FIXED + DEPLOYED + VERIFIED (2026-11-12) — live.** Both copies now read:
 
 ```php
 <?php the_field('credit_name'); ?>
 <?php if(get_field('credit_url')): ?></a><?php endif; ?>
 ```
 
-so the close tag is emitted only when the open tag is. Rendering verified by simulation: with a URL -> `<a href="…" target="_blank">© Name</a>` (unchanged); with empty `credit_url` -> `<h3 class="desktop-show">© Name</h3>` (no orphan tag). `php -l` clean, all 43 theme PHP files lint clean, zip rebuilt with 150 entries / order preserved / `testzip()` clean / only `single-lodges.php` differs. **Note:** `single-lodges-bk.php` carries the same bug but is a stale backup (no `od_normalize_url`, not a WP template name so never loaded) — deliberately left untouched. After deploy, expect the sitewide `href=""` count to fall from 54 toward 1 (the only non-theme one was the Mike Parr post, since cleared).
+so the close tag is emitted only when the open tag is. Rendering verified by simulation: with a URL -> `<a href="…" target="_blank">© Name</a>` (unchanged); with empty `credit_url` -> `<h3 class="desktop-show">© Name</h3>` (no orphan tag). `php -l` clean, all 43 theme PHP files lint clean, zip rebuilt with 150 entries / order preserved / `testzip()` clean / only `single-lodges.php` differs. Client replaced the theme directly on **live**.
+
+**Live verification (fresh cache-busting params):** stray credit `</a>` sitewide = **0** (was 52). `/lodges/abaco-bahamas/` credit now `<h3 class="desktop-show">© Owen Deutsch</h3>`, `href=""` = 0. `/lodges/cabanas-san-isidro-lodge-ecuador/` credit still renders as a link (`<a href="https://www.sanisidrolodge.com/" …>…</a>`) — no regression. Pages with `href=""` = 53, **all pre-existing** (see next note).
+
+**Note:** `single-lodges-bk.php` carries the same bug but is a stale backup (no `od_normalize_url`, not a WP template name so never loaded) — deliberately left untouched.
 
 ## Lodge link fields — how the theme renders them (READ BEFORE editing site_url / credit_url)
 
