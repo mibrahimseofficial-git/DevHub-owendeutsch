@@ -356,19 +356,7 @@ The replacement is under `/places/`, not `/jewel/` — the site was restructured
 The String Locator search found ~48 rows; only **2 were public-rendered**. Both mattered:
 
 1. `/lodges/owlet-lodge-at-abra-patricia-reserve-peru/` (`site_url` + `credit_url` postmeta) -> H1 correctly becomes **plain text**; credit keeps its text. **Good.**
-2. `/abc-mike-parr-my-favorite-bird/` (`wp_posts.post_content`, id **12172**) -> **PARTLY FIXED (2026-11-11).** The post had an inline `<a href="https://www.owletlodge.org/" target="_blank"> The Owlet Lodge </a>` in its body. The client **unlinked the text**, so it now renders as plain text: `... rare Long-whiskered Owlet! The Owlet Lodge` — **not a link any more**, which is the main fix. **But a residual empty anchor remains** right after the text:
-
-   ```html
-   The Owlet Lodge<a style="color: #fff600;font-weight: bold;" href="" target="_blank" rel="noopener noreferrer"> </a>is a great place to stay...
-   ```
-
-   The leftover `<a … href="" …> </a>` holds only a single space, so it is invisible and unclickable, but it still counts as one `href=""` on the page (the only owlet-related one sitewide). **As of 2026-11-12T00:15:32 the post was re-saved but the fragment is still in `post_content`** (confirmed via REST `posts/12172`). The exact literal to remove — it is unique in the DB, so String Locator can target it directly:
-
-   ```
-   <a style="color: #fff600;font-weight: bold;" href="" target="_blank" rel="noopener noreferrer"> </a>
-   ```
-
-   Two ways: (a) **String Locator** — search that whole fragment, replace with empty (matches only this one row); or (b) open the post → **⋮ → Code editor / Edit as HTML** → delete the fragment → Update. Verified after: page anchor balance is even (49 `<a>` / 49 `</a>`), visible text correct, `owletlodge` refs = 0.
+2. `/abc-mike-parr-my-favorite-bird/` (`wp_posts.post_content`, id **12172**) -> **FIXED (2026-11-11/12).** The post had an inline `<a href="https://www.owletlodge.org/" target="_blank"> The Owlet Lodge </a>` in its body. The client **unlinked the text** (now plain text), then cleared the residual empty anchor via String Locator. **Final verified state** (3 cache-busted fetches + REST `posts/12172`, `modified 2026-11-12T00:23:12`): `href=""` = **0**, `owletlodge` = 0, anchor balance **48/48**, visible text `...rare Long-whiskered Owlet! The Owlet Lodge is a great place to stay...`. Sitewide audit of 455 URLs: **0 dead domains, 0 owlet/lodge-related empty hrefs.**
 
 **Lesson for future String Locator replaces:** always check `wp_posts.post_content` too — the same string can be a body link on an unrelated page. The lodge template (postmeta) and post bodies (`wp_posts`) are separate tables, and a postmeta-only fix leaves body links broken.
 
