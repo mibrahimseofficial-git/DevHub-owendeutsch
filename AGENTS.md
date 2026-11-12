@@ -95,6 +95,8 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
 
 ## Client document task status
 Work in CLIENT DOCUMENT order. Statuses: DONE (staging) / OPEN / FALSE POSITIVE.
+**As of 2026-11-12 the client deployed the theme directly to LIVE** — every "DONE (repo/staging)"
+theme fix below was re-verified in production; see **LIVE VERIFICATION SWEEP — 2026-11-12**.
 Task numbering follows the user's "PDF#N" labels (31 tasks). Note the PDF's slide
 "03 · 7 Relative Lodge URLs + 44 Dead External Links" is split into TWO client tasks:
 PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
@@ -104,7 +106,7 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#1 | 8,424 broken location links (HTTP 400) | DONE (staging) — Part B false positive |
 | PDF#2 | Dead birdingtop500 footer badge | DONE (staging) — repo synced |
 | PDF#3 | 7 relative lodge URLs missing scheme | DONE (staging) — commit `0558a7e` |
-| PDF#4 | 44 dead external links | VERIFIED (2026-11-02) — **NOT THEME-FIXABLE**. Zero of the dead links are in theme code (grep of all 148 theme files: none of nanpa/owletlodge/africanpenguinsafe/nikon/abcbirds/seattle-audubon/roku/lincolnpark/orangehill/sandpiperabaco/sanisidrolodge/zebrahills/lemalacamp/wildsumaco/birdingtop500 appear). They live in **post content** (blog articles) and **ACF lodge fields** (database). Fix = client edits content / Redirection plugin, not a theme deploy. Live re-test 2026-11-02 shows many have RECOVERED since the Oct-2026 crawl: nanpa.org 200, nikonusa.com 200, lincolnparkconservancy.org 200, orangehill.com 200, sandpiperabaco.com 200, sanisidrolodge.com 200, zebrahills.com 200. Still genuinely broken: birdingtop500.com (server dead — badge already removed PDF#2), owletlodge.org (timeout), africanpenguinsafe.org (530), 5x abcbirds.org article links on /huembo.../ + 2 ABC pages (site restructured /blog20//article/ -> /news/), seattle-audubon shop (404), channelstore.roku.com detail (400), lemalacamp.com + wildsumaco.com (timeout). Footer Zoom webinar link (June 2020, 404) is inside a COMMENTED-OUT modal — dead code, never rendered. |
+| PDF#4 | 44 dead external links | **DONE (2026-11-12)** — all 8 actionable links fixed and verified live (6 repointed, 2 removed as domains with no successor); see the broken-links section below. Original analysis: VERIFIED (2026-11-02) — **NOT THEME-FIXABLE**. Zero of the dead links are in theme code (grep of all 148 theme files: none of nanpa/owletlodge/africanpenguinsafe/nikon/abcbirds/seattle-audubon/roku/lincolnpark/orangehill/sandpiperabaco/sanisidrolodge/zebrahills/lemalacamp/wildsumaco/birdingtop500 appear). They live in **post content** (blog articles) and **ACF lodge fields** (database). Fix = client edits content / Redirection plugin, not a theme deploy. Live re-test 2026-11-02 shows many have RECOVERED since the Oct-2026 crawl: nanpa.org 200, nikonusa.com 200, lincolnparkconservancy.org 200, orangehill.com 200, sandpiperabaco.com 200, sanisidrolodge.com 200, zebrahills.com 200. Still genuinely broken: birdingtop500.com (server dead — badge already removed PDF#2), owletlodge.org (timeout), africanpenguinsafe.org (530), 5x abcbirds.org article links on /huembo.../ + 2 ABC pages (site restructured /blog20//article/ -> /news/), seattle-audubon shop (404), channelstore.roku.com detail (400), lemalacamp.com + wildsumaco.com (timeout). Footer Zoom webinar link (June 2020, 404) is inside a COMMENTED-OUT modal — dead code, never rendered. |
 | PDF#5 | W3Schools keywords meta | DONE (repo) — removed header.php L8; needs staging deploy |
 | PDF#6 | Viewport meta blocks zoom (BUG 3) | DONE (repo) — header.php L9 simplified to width=device-width, initial-scale=1 |
 | PDF#7 | Cache-Control/Pragma/Expires meta (BUG 4) | DONE (repo) — 3 tags removed from header.php. Note: did NOT actually defeat caching (x-cache HIT measured); removal is cosmetic/browser-side only |
@@ -119,6 +121,41 @@ PDF#3 = relative lodge URLs, PDF#4 = the 44 dead external links.
 | PDF#27 | Self-host the external /globe/ JS files (slide 06: 3 "dead scripts") | DONE (repo) — vendored the 3 external scripts into the theme so /globe/ no longer depends on third-party CDNs: `js/topojson.v1.min.js` (topojson-client 1.8.0), `js/queue.v1.min.js` (queue v1), `js/bootstrap-5.3.0.bundle.min.js` (bootstrap 5.3.0-alpha3, byte-identical to the CDN file). template-globe.php now references all three via get_template_directory_uri(). Verified all 3 CDN URLs return 200 in ~0.1s from this container (the audit's "Timeout (0)" was a crawl-time blip, not a real outage) — so this is hardening/self-hosting, not a fix for an outage. NOTE (not changed): functions.php also enqueues a LOCAL bootstrap.min.js v3.3.2, so /globe/ loads bootstrap twice (3.3.2 + 5.3.0) — pre-existing; removing either risks the tab JS (`.tab("show")` is used), left for a scoped test. Also: header.php's `http://code.jquery.com/ui/1.10.2/jquery-ui.js` is COMMENTED OUT (not live mixed content); the live jQuery UI is the local 1.12.1 enqueue. |
 | PDF#25 | 1.76 MB HTML / Fancybox caption bloat (slide 07 item 01) | VERIFIED — **plugin setting, not theme code**. The activity-search page is 1.72 MB = 100 unique per-bird Fancybox `<figcaption>` blocks (~7.5 KB each, ~850 KB total, = the audit's "8,752 words"). They are NOT duplicated (100 birds = 100 captions) and are intrinsic to the search result markup that Fancybox reads via `.find('figcaption').html()`. Measured: the page is **70% whitespace and NOT minified** (homepage 589 KB, /my-recent-photos/ 1.02 MB, activity 1.72 MB — all unminified). A safe whitespace collapse (preserving single spaces, skipping script/style) gives **67% reduction** (1.72 MB → 557 KB) with byte-identical visible text. **Fix = enable WP Rocket → File Optimization → Minify HTML** (site already licenses WP Rocket 3.21.2; currently OFF). Did NOT ship a custom ob_start minifier: it would duplicate a licensed feature, risk corrupting the Fancybox caption markup the lightbox parses, and conflict with WP Rocket. Not a theme deploy. |
 | ... | remaining PDF tasks | not yet verified |
+
+### LIVE VERIFICATION SWEEP — 2026-11-12 (client deployed theme straight to LIVE)
+
+The client replaced the theme **directly on live** (skipping the staging step). Every
+theme fix below had previously been verified on **staging only** — so this sweep confirms
+the whole theme deliverable is now actually running in production. Method: cache-busted
+fetches with a **fresh random** param each time (`?v=<rand>`, `x-cache: MISS`).
+
+**Confirmed LIVE — all PASS:**
+
+| Task | Check | Live result |
+|------|-------|-------------|
+| PDF#1 | Location filter links (were HTTP 400 via `%FF`) | All previously-broken locations **200**; `%FF` corruption = **0**; proper en-dash links render (5 on san-diego) |
+| PDF#2 | birdingtop500 badge | **0** refs on homepage |
+| PDF#3 | Relative lodge URLs (`/lodges/.../www.`) | **0** on san-isidro and san-diego |
+| PDF#5 | W3Schools keywords meta | **0** |
+| PDF#6 | Viewport zoom block | `user-scalable=0` **absent** |
+| PDF#7 | Cache-Control/Pragma metas | **0** |
+| PDF#8 | `/cp_birds_country/ec/` + `/lodges/southeast-california/` | Both valid: DOCTYPE/html/head/body/title present, ec = 76 KB with 1 H1 (not 566 bytes); 0 script/style after `</html>` |
+| PDF#9 | Filter case/space normalization | `flight` / `FLIGHT` / `" flight"` all **200** |
+| PDF#10 | `/llms.txt` | **200**, `text/plain`, 1525 bytes |
+| PDF#11 | Duplicate JSON-LD | **1** block, `@vocab` gone |
+| PDF#12 | Missing H1s | `/globe/`, `/grid/`, `/cp_birds_country/us/` each have an H1; homepage = 1 H1 |
+| PDF#15 | Duplicate jQuery | **1** core `jquery.min.js` (jquery-migrate + jquery.validate are plugins, not duplicates) |
+| PDF#27 | `/globe/` external CDN scripts | **0** (all self-hosted) |
+
+**Two false FAILs in my own check code (fixed, not real defects):** (a) I counted
+`jquery.validate.min.js` as a duplicate core jQuery — it is a plugin; the real core count
+is 1. (b) I lower-cased the page then searched for the uppercase literal `'<!DOCTYPE'`,
+which can never match — ec page does have a valid DOCTYPE. Lesson: assert on the specific
+thing (core jQuery, case-insensitive DOCTYPE), not a loose substring.
+
+**Still client/infra (unchanged, not theme):** PDF#13 WebP (Cloudflare/Imagify), PDF#14
+security headers (edge), PDF#25 HTML minify (WP Rocket setting), PDF#19/#20/#21
+(content/Yoast), PDF#31 (process).
 
 ### POST-DEPLOY RE-VERIFICATION (staging now runs `development`) — 2026-11-02
 
