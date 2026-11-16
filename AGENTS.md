@@ -241,7 +241,7 @@ Cornell, TripAdvisor, DOI, Unsplash, USA Today) are **not** defects.
 | PDF#14/#30 security headers | PARTIAL — HSTS + nosniff + Referrer-Policy present; **X-Frame-Options, CSP, Permissions-Policy absent** |
 | PDF#25 HTML minify | **Still OFF** (unminified; payload already 0.2–0.5 MB) |
 | PDF#13/#24 WebP | Not enabled (99.9% JPEG) |
-| PDF#13/#23 empty alt + missing dims | Still present (e.g. `logo.png alt=""`, loader images without width/height) |
+| PDF#13/#23 empty alt + missing dims | **Gallery images DONE (2026-11-11, commit `1fcfd74`)** — `template-conservation.php` L50 and `index.php` L32 were the two gallery templates missed by the original PDF#13 pass; both now emit width/height via `od_image_size_attrs()` / the `$image[1..2]` guard, matching template-globe.php L216 and grid_template.php L104. Remaining no-dimension images are **UI chrome only** (loader.svg, logo.png, birdingtop500.png, close-btn.png, musical-notes-symbols-2.png, bird-loader.gif) plus content-inserted images (WP core adds dims automatically). `logo.png` still has `alt=""` (decorative, acceptable). |
 | PDF#11 Yoast Knowledge Graph | No Organization node yet (client must configure Yoast) |
 | PDF#20/#21 duplicate titles/H1s | Sample of 200: **0 duplicate titles**, 3 duplicate H1 pairs (content-level) |
 | PDF#31 monthly audit | Process, not code |
