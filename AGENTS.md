@@ -65,12 +65,22 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
     the site's own generated hyphen-form URL while the en-dash form returns 100 birds —
     an en-dash vs hyphen mismatch in the stored ACF data. Out of scope for Task 1; the
     audit's separate "normalize ACF filter values" task covers it.
-- **Task 2 (birdingtop500 footer badge):** REAL, CLOSED (staging). The commented-out
-  block has been removed on staging (verified: cache-busted raw refs = 0; live still
-  shows 2 raw refs but 0 rendered). Badge server confirmed dead (HTTP 000, 20s timeout).
-  Never rendered for visitors (was pre-commented in the client's original upload), so the
-  "failed image request" symptom was a false positive; the cleanup is the real task.
-  Repo `development` zip updated to match staging (block removed from footer.php).
+- **Task 2 (birdingtop500 footer badge):** REAL, CLOSED (staging) — **REVERSED 2026-11-16
+  at client request: badge RESTORED and made live (uncommented).**
+  Original 2026-11-02 outcome: block removed from `footer.php` in the repo zip (commit
+  `7e40cec`), matching staging. Rationale then: badge server was dead (HTTP 000, 20s
+  timeout) and the block had been pre-commented in the client's original upload, so it
+  never rendered for visitors.
+  **2026-11-16 update:** birdingtop500.com came back online. Verified live:
+  `https://www.birdingtop500.com/` = 200; the real badge image
+  `https://www.birdingtop500.com/button.php?u=owendeutschphotography005` = **200,
+  `image/png`, 24,199 bytes**. (Note the exact username `owendeutschphotography005` —
+  the shorter `?u=owendeutsch` returns 404.) Client asked for the badge back, so the
+  markup was restored to `footer.php` in the repo zip, **uncommented and functional**
+  (adds `target="_blank" rel="noopener"`; the original had no rel and used `<br />`).
+  It is no longer dead code. Placement: inside `<p class="site-by">`, above the
+  copyright line. Deploy = theme zip to WP Engine, then purge WP Rocket -> WP Engine ->
+  Cloudflare. **STILL PENDING: deploy to staging, client sign-off, then LIVE.**
 
 ## Known live-verified facts
 - HTTP header sends `charset=UTF-8`. The legacy
