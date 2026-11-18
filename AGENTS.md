@@ -108,6 +108,46 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### ABANDONED-PLUGIN AUDIT — "Slider and Carousel Plus Widget for Social Media" (v1.9.3) — 2026-11-18
+
+Maintenance doc Critical #3 says this plugin was removed from wordpress.org but remains installed
+and active. **Verified: installed, active, and loading assets site-wide — but its feature is used
+NOWHERE.** Safe to deactivate/delete once one dependency is confirmed.
+
+**Evidence — what the plugin emits on live:**
+- `assets/css/font-awesome.min.css?ver=1.9.3` — **every page** (homepage, /about-owen/, /faq/,
+  /conservation/, /blog/, /globe/, lodges, galleries — 12/12 sampled).
+- `iscwp-public-css` (its own stylesheet, `id='iscwp-public-css-css'`) — most pages.
+- **NEVER any slider/grid markup.** Zero `iscwp-slider`, `iscwp-grid`, `iscwp-carousel`,
+  `wpsisac`, `sbc_`, `instagram-feed-widget` tokens on any page. Literal `[iscwp` string absent
+  (shortcode not even present unparsed).
+
+**Its two shortcodes — `[iscwp-slider]` and `[iscwp-grid]` (per plugin readme) — appear in ZERO
+theme files and ZERO rendered pages.** Full 453-page crawl: the only `iscwp` hits are the CSS
+`<link>` tags (18 pages), never markup.
+
+**The Instagram feed users actually see is a DIFFERENT plugin:** Smash Balloon Instagram Feed
+(slug `instagram-feed`, v6.16.0, `sbi-styles.min.css`, `sbi-scripts.min.js`). The theme calls it
+from `template-homepage.php:956`, `template-about-owen.php:132`, `template-book.php:121` via
+`do_shortcode("[instagram-feed num=5 cols=5 showfollow=false]")`. Not the abandoned plugin.
+
+**Widget:** the theme registers ONE sidebar (`functions.php:253`, id `sidebar`) and calls
+`get_sidebar()` only from `templates/template-samplepage.php` and `loop-content.php`. The
+abandoned plugin's widget is not rendered on any live page.
+
+**⚠️ ONE dependency to confirm before deleting:** the plugin loads its own **Font Awesome 4.x**
+(31,000 bytes). The **theme ALSO bundles Font Awesome 4.3.0** at
+`fonts/font-icons/font-awesome.css` (28,732 bytes, 200 OK), imported via `fonts/fonts.css`
+(`@import 'font-icons/font-awesome.css'`), enqueued as `style-fonts`. The theme's copy defines
+`.fa-facebook`, `.fa-search` etc. — so the icons the theme uses (`fa-facebook`, `fa-instagram`,
+`fa-search`, `fa-map-marker`, `fa-th-large`, `fa-youtube-play`, `fa-long-arrow-right`) are served
+by the THEME, not the plugin. **Deleting the plugin should therefore be visually safe**, but
+verify the icons still render on a staging page after deactivation (load-order: if the plugin's FA
+were winning the cascade, removal could expose a missing glyph).
+
+**Recommendation:** deactivate on staging → confirm icons + Instagram section render → delete.
+Removes an abandoned, unpatched, internet-facing plugin from the update-drift risk list.
+
 ### EMPTY-HREF SITE SCAN — LIVE — 2026-11-18
 
 Crawled all 453 sitemap URLs (277 posts + 29 pages + 147 lodges) on live. **14 empty
