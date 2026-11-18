@@ -108,6 +108,38 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### DEAD-LINK REPLACEMENT VERIFICATION — LIVE — 2026-11-18
+
+User reported the 14 live dead links were replaced. Re-crawled live (424 pages: 277 posts +
+147 lodges) → 265 unique external URLs → tested all. **12 of 15 old URLs confirmed gone;
+3 still present** (see below). Two of the 3 are the *known-unfixable* class.
+
+| Old URL still rendered on live | Page | Note |
+|---|---|---|
+| `doi.org/10.1675/1524-4695(2006)29%5B169:WCADBI%5D2.0.CO;2)` | `/its-gone-but-where-did-it-go-an-aba-young-birder-essay/` | trailing `)` **not** removed |
+| `http://hummingbirdscanada.ca/hummingbirds/migration` | `/chip-cold-and-canada-an-aba-young-birder-essay/` | agreed REMOVE — still present |
+| `amazon.com/…/dp/1787135047?tag=smarturl-20\uFEFF` | `/greater-flamingo-the-dramatic-migrator/` | trailing **U+FEFF** still present |
+
+**CONFIRMED FIXED on live (12):** all 7 ABC Birds article URLs, `conserva-aves.org/en/home-english/`,
+`seattle-audubon-nature-shop…/search/BirdNote/` (×2 pages), `birdsnotmosquitoes.org/frequently-asked-questions`,
+`chicagobirder.org/cos-labagh-woods-project`→`/labagh`, `ecoanperu.org/indexeng.html`, `felzfotoz.com/portfolio-1/portfolio-italy`,
+`marylandbiodiversity.com/docs/engstrom_2023.pdf.` (trailing dot gone), `visittoledo.org/birding-in-northwest-ohio/`,
+and **Roku** — repointed to a NEW valid channel id (`9046d648…:13639b48…`, verified 200).
+
+**Lesson (repeat of OA-2):** the 3 stragglers are invisible-character / punctuation edits. A
+"search & replace" that looks successful in the editor can still miss a trailing BOM/`)`/`.`
+because the character is not visible. Verify by **byte-level comparison of the rendered href**,
+not by eyeballing the field. Also: WP Rocket + Cloudflare cache by full query string — use a
+fresh random `?cb=` per request or you audit the stale page.
+
+**STAGING post-update health (2026-11-18)** — user updated WordPress core, theme and all
+plugins on staging. Smoke-tested 12 key pages (`/`, `/blog/`, `/videos/`, `/globe/`, `/grid/`,
+`/countries/`, `/conservation/`, `/lodges/`, `/?s=birds`, `/my-recent-photos/`, `/about-owen/`,
+`/llms.txt`): **all HTTP 200, exactly 1 H1, 1 JSON-LD, 1 jQuery** each. No regression. The
+`/?s=birds` page's 207 `no-dimension` images are **UI chrome** (logo.png, loader.svg,
+bird-loader.gif, search-icon.png, musical-notes-symbols-2.png) — identical counts on live, so
+**not** an update regression. `/llms.txt` 200 (theme handler).
+
 ## Client document task status
 Work in CLIENT DOCUMENT order. Statuses: DONE (staging) / OPEN / FALSE POSITIVE.
 **As of 2026-11-12 the client deployed the theme directly to LIVE** — every "DONE (repo/staging)"
