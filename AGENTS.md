@@ -108,6 +108,40 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### EMPTY-HREF SITE SCAN — LIVE — 2026-11-18
+
+Crawled all 453 sitemap URLs (277 posts + 29 pages + 147 lodges) on live. **14 empty
+`href=""` across 10 pages.** Classified by comparing against staging (staging = 0 on the
+two damaged pages):
+
+**NEW DAMAGE from the link-replacement pass (live only, staging clean) — 5 anchors:**
+
+| Page | Count | What it looks like |
+|---|---|---|
+| `/huembo-home-of-the-marvelous-spatuletail/` | **4** | `Return to Abra Patricia: …Spreading<a href=""> </a>|<a href=""> American Bird Conservancy (abcbirds.org)</a>` |
+| `/the-global-birding-experience-owlet-lodge-at-abra-patricia-in-peru/` | **1** | `…epicenter of a <a href="">culture of conservation</a> spreading…` |
+
+**Cause:** the ABC URLs were blanked (href set to empty) instead of repointed to the Wayback
+replacement. The anchor wrapper survived with `href=""`. This is the exact failure mode
+AGENTS.md already warns about ("a bare `href=""` is the one outcome to avoid") — same class as
+the Mike Parr / Owlet damage. **Fix = set the href to the Wayback URL, or unwrap the `<a>`.**
+
+**PRE-EXISTING theme furniture (identical on live AND staging) — 9 anchors, NOT damage:**
+
+| Page | Anchor text | Nature |
+|---|---|---|
+| `/first-look-birds-of-the-atlantic-rainforest/` | `Northern (Yellow-bellied)` | `class="whitebtn"` tag with no term URL |
+| `/lodges/big-sur-california-usa/` | `Oregon Group` | ditto |
+| `/lodges/dixon-illinois-usa/` | `winter plumage` | ditto |
+| `/lodges/labagh-woods-illinois-usa/` | `Molting` | ditto |
+| `/lodges/mchenry-county-illinois-usa/` | `Molting` | ditto |
+| `/lodges/monterey-bay-california-usa/` | `Western gull with a Black Oystercatcher in front` | ditto |
+| `/tropical-andes-migration/` | `Molting` | ditto |
+| `/which-bird-photography-gear-is-right-for-you/` | (2 × empty text) | adjacent to B&H links; pre-existing per 2026-07-16 Wayback |
+
+To tell damage from furniture: **furniture is byte-identical on staging; damage appears only on
+live.** Use live-vs-staging diff, not the count alone.
+
 ### DEAD-LINK REPLACEMENT VERIFICATION — LIVE — 2026-11-18
 
 User reported the 14 live dead links were replaced. Re-crawled live (424 pages: 277 posts +
