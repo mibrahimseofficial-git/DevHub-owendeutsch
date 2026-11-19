@@ -108,6 +108,73 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### MAINT#12 — ~160 spam comments with suspected malware URLs — 2026-11-18
+
+**Doc item:** High / Medium (1-2 h). Wordfence flagged ~160 comments + 1 trackback.
+
+**CONFIRMED: spam is real, live, and publicly visible.** But the doc's "SEO poisoning" framing
+is **overstated** — see the nofollow finding below. The real damage is **brand reputation**.
+
+**Where the spam actually appears (verified live, cache-busted):**
+
+| Surface | Exposes spam? | Evidence |
+|---|---|---|
+| Post pages (`/owl-fun-facts/` etc.) | **NO** | 25/25 sampled posts render **0** comment blocks |
+| Archive/category/date pages | **YES — 5 links** | `/2024/`, `/category/uncategorized/`, `/2024/05/` |
+| `/comments/feed/` (RSS) | **YES — 10 latest** | full spam author list, links, titles |
+| Per-post comment feeds | **YES** | `/wader-wonderland/feed/` → "buy iphone duo with warranty" |
+| Homepage / `/blog/` | NO | sidebar not rendered |
+
+**Live spam authors seen in the "Recent Comments" sidebar widget:**
+`buy iphone duo with warranty` → `bxnndjmjss.com`; `ABM Insulation` → `abmtrade.eu` (x2);
+`aslı` → `aslitarcanglobal.com/hair-transplant-cost-in-turkey/`;
+`dr arslan` → `drarslanklinik.com/harmonyca-hibrit-dolgu`; plus `Avukat SEO`, `gartavembkis1984`,
+`boshpria`, `yakup çil` in `/comments/feed/`.
+
+**⚠️ GOOD NEWS — the links do NOT pass SEO authority.** Every spam author link carries
+`rel="ugc external nofollow"` (checked all 5 in the sidebar; **zero followed links**). WordPress
+applies this automatically. So the "SEO poisoning / link equity" risk in the doc is **not
+happening**. The exposure is purely reputational: a wildlife-photography brand publicly showing
+"buy iphone", "hair transplant turkey", "insulation" links on its archive pages.
+
+**WHY comments never show on posts — theme finding:** `single.php:29-30` is
+
+```php
+<div class="comment-template">
+<?php //comments_template(); ?>     <- COMMENTED OUT
+```
+
+So `wp_list_comments()` / `comment_form()` never run on single posts. `comments.php` still exists
+and is correct, but it is never included. Consequence: **no comment form is rendered anywhere**
+(`id="commentform"` absent on sampled posts), yet the "Recent Comments" **widget** calls
+`get_comments()` directly and happily prints the spam. That is the only reason it is visible.
+
+**Spam can still be submitted:** `wp-comments-post.php` returns **405** on GET, i.e. the endpoint
+is live and will accept a POST. With no visible form, submissions are direct/bot POSTs.
+
+**Akismet is NOT installed** — `wp-content/plugins/akismet/akismet.php` → **404**. The doc says
+"installed but inactive"; it is actually **absent**. Do not plan around activating it.
+
+**Scale signal:** highest comment ID observed is **314,352**. IDs are sequential, so total
+historical comment volume is far larger than the ~160 Wordfence flagged. Expect a big backlog of
+pending/spam/trashed rows in `wp_comments`; the 160 are just what Wordfence matched. **Needs a
+DB-level count** (`SELECT comment_approved, COUNT(*) FROM wp_comments GROUP BY comment_approved`).
+
+**Remediation (WP Admin / DB — not theme-fixable):**
+1. `wp_comments`: `SELECT * FROM wp_comments WHERE comment_approved='spam'` then bulk-delete;
+   repeat for `'0'` (pending) and audit `'1'` (approved) — approved ones are what render now.
+2. Delete the trackback flagged by Wordfence.
+3. **Close comments on old posts** (Settings → Discussion, or bulk edit → Comments: Closed).
+   Since `comments_template()` is commented out, closing comments costs nothing visually.
+4. **Turn off the Recent Comments widget** (Appearance → Widgets) — instantly removes the public
+   spam surface on archive pages. Fastest single win.
+5. Install + configure **Akismet or Antispam Bee** (Akismet is absent, not just inactive).
+6. Disable comment feeds if unused: Settings → Discussion, or filter `comments/feed`.
+7. Re-scan with Wordfence to confirm the count hits zero.
+
+**Repo option (if wanted):** also delete the dead `<div class="comment-template">` block in
+`single.php` so the intent is explicit, or restore `comments_template()` if comments should work.
+
 ### MAINT#10 — WP_MEMORY_LIMIT 40 MB — 2026-11-18
 
 **Doc item:** High / Low effort (15 min). "Raise WP_MEMORY_LIMIT to 256M (and confirm
