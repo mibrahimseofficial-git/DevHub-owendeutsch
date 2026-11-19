@@ -108,6 +108,75 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### MAINT#10 — WP_MEMORY_LIMIT 40 MB — 2026-11-18
+
+**Doc item:** High / Low effort (15 min). "Raise WP_MEMORY_LIMIT to 256M (and confirm
+WP_MAX_MEMORY_LIMIT stays at 512M) in wp-config.php."
+
+**NOT theme-fixable.** `wp-config.php` is not in this repo (repo holds only `owendeutsch.zip`,
+the two client docs, and `docs/`). Theme PHP contains **0** `MEMORY_LIMIT` / `ini_set` /
+`memory_limit` references — verified across every `.php` in the zip. Memory is a
+wp-config / WP Engine platform setting. **Cannot be verified externally either**: `/wp-json/`
+and `/wp-admin/site-health.php` both 403, and no `x-powered-by` is exposed (headers show only
+`server: cloudflare`).
+
+**LIVE stress test (cache-busted) — no memory failures at current 40M:**
+| page | http | bytes | secs |
+|---|---|---|---|
+| `/?s=a` (broad search) | 200 | 479,573 | 2.31 |
+| `/?s=bird` | 200 | 498,969 | 2.02 |
+| `/?s=e` | 200 | 483,419 | — |
+| `/globe/` (D3) | 200 | 78,075 | 2.02 |
+| `/lodges/` | 200 | 273,407 | 0.61 |
+| `/grid/` | 200 | 65,399 | 1.66 |
+| `/countries/` | 200 | 78,635 | 1.81 |
+
+Zero `Fatal error` / `Allowed memory size` / `memory exhausted` strings. So 40M is **surviving
+front-end traffic today** — the risk is concentrated in **admin/bulk operations**, exactly as
+the doc says.
+
+**⚠️ THE REAL MEMORY HOG — found while auditing this item: an unauthenticated global-scope
+handler in `functions.php:3122`.**
+
+```php
+if (isset($_GET['test'])) {          // line 3122 — NO capability check, NO nonce
+    // loads ALL 147 lodges into $lodges_id_title_arr
+    // then loads ALL 8,978 cp_birds with posts_per_page => -1
+    // then nested foreach: 8,978 x 147 string normalisations + comparisons
+}
+```
+
+It sits at **file scope in `functions.php`** (not inside a function, not hooked to
+`admin_init`), so it executes on **any** front-end request carrying `?test`. Verified live:
+`https://owendeutsch.com/?test=1` → **HTTP 200 after 8.76 s** (vs 0.6–2.3 s for normal pages),
+performing a full 8,978-record table scan on every hit.
+
+Two problems in one:
+1. **Memory/time** — the single heaviest operation in the theme, and it is user-triggerable.
+2. **DoS vector** — anonymous, unauthenticated, ~9 s of PHP+DB per request. Easy to saturate
+   WP Engine workers.
+
+**Recommendation:** delete the whole `if (isset($_GET['test'])) { ... }` block
+(`functions.php:3122-3187`) — it is a one-off migration script that was used to populate
+`bird_locations_multi` via `update_post_meta`, and that line is already commented out (3180).
+It does nothing except burn CPU. This matters more than the memory bump.
+
+**Other unbounded queries (admin-only, lower risk):**
+- `functions.php:3568` — `render_bird_reorder_page()` loads **all** `cp_birds` with
+  `posts_per_page => -1` + `get_the_post_thumbnail()` per row → this is the admin page most
+  likely to white-screen at 40M. Reorder/Beautiful-Birds admin screen.
+- `functions.php:1103, 1124, 1216, 1237` — search helpers, `fields => 'ids'` (lighter, but still
+  unbounded over 8,978 rows).
+- `functions.php:3272-3403` — batched at `250` (fine).
+- `template-lodges.php:84, 126` — `-1` over 147 lodges (fine).
+
+**Action split:**
+- **Client / WP Engine (infra):** add `define('WP_MEMORY_LIMIT', '256M');` and confirm
+  `define('WP_MAX_MEMORY_LIMIT', '512M');` in `wp-config.php`; then test bulk edit, WP All
+  Export, Regenerate Thumbnails. Note WP Engine manages `wp-config.php` — confirm the define
+  survives their platform updates / ask support.
+- **Repo (theme):** remove the `?test` block; consider bounding the reorder page.
+
 ### ABANDONED-PLUGIN AUDIT — "Slider and Carousel Plus Widget for Social Media" (v1.9.3) — 2026-11-18
 
 Maintenance doc Critical #3 says this plugin was removed from wordpress.org but remains installed
