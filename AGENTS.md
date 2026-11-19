@@ -186,6 +186,32 @@ were winning the cascade, removal could expose a missing glyph).
 **Recommendation:** deactivate on staging → confirm icons + Instagram section render → delete.
 Removes an abandoned, unpatched, internet-facing plugin from the update-drift risk list.
 
+**✅ DEACTIVATED — 2026-11-18. VERIFIED SAFE on LIVE.** Post-deactivation check (cache-busted,
+4 pages: `/`, `/about-owen/`, both book pages):
+- `slider-and-carousel-plus-widget-for-instagram` → **0 refs** (was on every page). Gone.
+- `iscwp-public-css` → **0 refs**. Gone.
+- **Instagram feed intact:** `instagram-feed/css/sbi-styles.min.css` + `sbi_*` markup still present
+  on all 4 pages. Smash Balloon unaffected.
+- **Icons intact:** all 7 `fa` icons still render (`fa-facebook`, `fa-instagram`, `fa-search`,
+  `fa-light fa-magnifying-glass`, `fa-long-arrow-right`, `fa-youtube-play`, `sbi` carousel icon).
+- All 4 pages HTTP 200.
+
+**Font Awesome dependency resolved (this was the one risk):** the theme's FA loads correctly even
+though Autoptimize rewrites `@import 'font-icons/font-awesome.css'` to
+`@import url(//owendeutsch.com/wp-content/themes/owendeutsch/fonts/font-icons/font-awesome.css)`.
+That target is **200, 28,732 bytes, and defines `.fa-facebook`, `.fa-search`, `.fa-instagram`,
+`.fa-youtube-play`, `@font-face FontAwesome`**. Webfonts also 200 (`fontawesome-webfont.woff2`,
+`.woff`, `FontAwesome.otf`). So the plugin's FA copy was pure redundancy — **the theme was always
+the one serving the icons.**
+
+NOTE: staging still shows `wposPlugin=True` (plugin assets still referenced). Deactivation was
+applied to LIVE. If staging must mirror live, deactivate there too.
+
+**Remaining cleanup (optional, no user impact):** the 7 commented-out dead lines
+(`template-homepage.php:953-955`, `template-about-owen.php:130-131`, `template-book.php:119-120`)
+and `wp_options` option 817 (`options_instagram_feed_shortcode`). Plugin files are still on disk
+(assets still 200) — the plugin can now be deleted outright.
+
 ### EMPTY-HREF SITE SCAN — LIVE — 2026-11-18
 
 Crawled all 453 sitemap URLs (277 posts + 29 pages + 147 lodges) on live. **14 empty
