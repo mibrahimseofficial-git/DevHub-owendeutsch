@@ -122,10 +122,30 @@ NOWHERE.** Safe to deactivate/delete once one dependency is confirmed.
   `wpsisac`, `sbc_`, `instagram-feed-widget` tokens on any page. Literal `[iscwp` string absent
   (shortcode not even present unparsed).
 
-**CORRECTION (2026-11-18, user ran String Locator):** the shortcode DOES exist in the database —
-`wp_options`.`option_value`, **ID 817**: `[iscwp-slider username="owendeutsch" limit="8"
-slidestoshow="4"...]`. My earlier "appears nowhere" was too strong: it is stored, but it never
-**renders**. Of the 5 String Locator hits, 4 are noise — 1 real (`wp_options` 817) plus 3
+**ROOT CAUSE FOUND (2026-11-18, via String Locator).** Option 817 is
+`option_name = options_instagram_feed_shortcode`, `autoload = no` — an **ACF options-page field**
+(`options_instagram_feed_shortcode` is the `options_` prefix ACF applies to `get_field($name,
+'option')`). Value: `[iscwp-slider username="owendeutsch" limit="8" slidestoshow="4"...]`.
+
+**The theme reads it — but every read is commented out.** Three templates each do:
+
+```php
+//$instagram_shortcode = get_field('instagram_feed_shortcode', 'option');
+//echo do_shortcode($instagram_shortcode);
+echo do_shortcode("[instagram-feed num=5 cols=5 showfollow=false]");   // <- Smash Balloon, hardcoded
+```
+
+- `templates/template-homepage.php:953-956`
+- `templates/template-about-owen.php:130-132`
+- `templates/template-book.php:119-121`
+
+Verified: **zero** uncommented `get_field('instagram_feed_shortcode')` anywhere in the theme.
+So the ACF field is written to the DB and then never read. That is the exact reason the abandoned
+plugin renders nothing while still enqueuing its CSS — the switch to Smash Balloon was done by
+commenting out the old call and hardcoding the new shortcode, leaving the ACF field orphaned.
+
+**This is the cleanest possible removal case:** delete option 817 (and the ACF field) → deactivate
+→ delete the plugin. Nothing references either. Of the 5 String Locator hits, 4 are noise — 1 real (`wp_options` 817) plus 3
 Wordfence file-index rows (`wp_wffilemods.filename`, `wp_wffilemods.real_path`,
 `wp_wfknownfilelist.path/wordpress_path`) that merely record the plugin's own
 `includes/shortcode/iscwp-slider.php` file path.
