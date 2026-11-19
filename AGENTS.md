@@ -122,9 +122,27 @@ NOWHERE.** Safe to deactivate/delete once one dependency is confirmed.
   `wpsisac`, `sbc_`, `instagram-feed-widget` tokens on any page. Literal `[iscwp` string absent
   (shortcode not even present unparsed).
 
-**Its two shortcodes — `[iscwp-slider]` and `[iscwp-grid]` (per plugin readme) — appear in ZERO
-theme files and ZERO rendered pages.** Full 453-page crawl: the only `iscwp` hits are the CSS
-`<link>` tags (18 pages), never markup.
+**CORRECTION (2026-11-18, user ran String Locator):** the shortcode DOES exist in the database —
+`wp_options`.`option_value`, **ID 817**: `[iscwp-slider username="owendeutsch" limit="8"
+slidestoshow="4"...]`. My earlier "appears nowhere" was too strong: it is stored, but it never
+**renders**. Of the 5 String Locator hits, 4 are noise — 1 real (`wp_options` 817) plus 3
+Wordfence file-index rows (`wp_wffilemods.filename`, `wp_wffilemods.real_path`,
+`wp_wfknownfilelist.path/wordpress_path`) that merely record the plugin's own
+`includes/shortcode/iscwp-slider.php` file path.
+
+**Why it never renders — verified end to end:**
+1. Theme registers exactly ONE widget area, `sidebar` (`functions.php:253`).
+2. `get_sidebar()` is called from only two places: `templates/loop-content.php:61` (used by
+   `archive.php` + `category.php`) and `templates/template-samplepage.php:20`.
+3. Live AND staging both render the sidebar with **only two widgets**: `recent-posts-2` and
+   `recent-comments-2`. No slider widget, no text widget holding the shortcode.
+4. So option 817 sits in a widget that is not assigned to any active sidebar (e.g. it lives in
+   `wp_inactive_widgets`, or in a sidebar that no longer exists). The data is orphaned.
+
+**Verified: zero rendered markup on every page type tested** — 453 sitemap URLs (posts, pages,
+lodges) + category archives (`/category/uncategorized/`), date archives (`/2024/`, `/2024/05/`),
+`/taxonomy/`, galleries, `/globe/`. Zero `iscwp-slider|grid|carousel|pics|img|wrap|col` tokens,
+zero literal `[iscwp-slider` strings in output. Both live and staging identical.
 
 **The Instagram feed users actually see is a DIFFERENT plugin:** Smash Balloon Instagram Feed
 (slug `instagram-feed`, v6.16.0, `sbi-styles.min.css`, `sbi-scripts.min.js`). The theme calls it
