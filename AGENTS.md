@@ -108,6 +108,64 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### COMMENT CLEANER RESULTS + SITE-HEALTH DELTA — 2026-11-20
+
+**Comment Cleaner (client-supplied plugin) ran on live.** Sample of 500 random APPROVED
+comments: **493/500 were spam (98.6%)**. Remaining "real-looking" ones investigated and are
+ALSO spam — see below. Recommendation: delete all + close comments (pending client sign-off).
+
+**"Real-looking" comments are off-topic link-building spam, NOT genuine:**
+
+| Author | Posted on | Body | Verdict |
+|---|---|---|---|
+| ABM Insulation (x2) | Jabiru: the Giant Stork of Belize | "Your dedication to quality content shows in absolutely everything you create" | generic flattery + commercial link |
+| Mike | Picturing the Beauty of Little Brown Jobs | "healthy soil does so much of the work before anything even starts growing... gardening" | **gardening on a bird-photo post** |
+| Sarah | What Makes for Great Bird Photography? | "helped a friend streamline her small online shop... order process" | **e-commerce on a bird-photo post** |
+| İLKER | Acorn Woodpeckers | "The topic is well chosen, but it lacks examples." | generic filler |
+| Alex H. I. Mccall / Hailey Aubrielle Erin Smith | Acorn Woodpeckers | "# Tasarımdan Dijital Pazarlamaya: Sanatizi Reklam Ajansı" | Turkish ad-agency spam |
+
+None reference birds, photography or the post's actual subject. Safe to delete.
+
+**WHERE THE COMMENTS COME FROM (client asked):** bots POST directly to `wp-comments-post.php`
+(live, returns 405 on GET). A visible form is NOT required. `comments_open()` is true on all
+posts, and `single.php:30` has `//comments_template();` commented out — so the theme stopped
+RENDERING comments at some point while the endpoint stayed open. Highest comment ID observed
+**314,352** → large historical volume.
+
+**Post-cleanup state still needs 2 actions:** Recent Comments widget still renders spam on
+`/2024/`, `/category/*`, `/2024/05/` (5 links), and `/comments/feed/` still serves spam.
+
+**⚠️ CORRECTION: Akismet IS installed** — `wp-content/plugins/akismet/akismet.php` → **200**
+(v5.7.2, INACTIVE). My earlier 404 was a transient fetch failure. The doc's "installed but
+inactive" was right.
+
+### SITE-HEALTH DELTA vs the audit doc (from client's Site Health export, 2026-11-20)
+
+Several Critical/High items are now RESOLVED — the doc is stale on these:
+
+| # | Audit said | Now (Site Health) | Status |
+|---|---|---|---|
+| 1 | WP core 7.1.3 → update to 7.1.4 | **7.1.5** | ✅ DONE (ahead of the target) |
+| 8 | PHP 8.2.35, upgrade to 8.3 | **PHP 8.4.27** | ✅ DONE (ahead) |
+| 10 | WP_MEMORY_LIMIT 40M | **WP_MEMORY_LIMIT 512M / MAX 512M** | ✅ DONE |
+| 7 | 12 users, 10 admins | **user_count: 4** | ✅ largely DONE |
+| 14 | 6 inactive themes | **1 inactive** (Genesis Block) | ✅ largely DONE |
+| 3 | Removed slider plugin active | **now INACTIVE** | ✅ DONE (2026-11-19) |
+
+Still OPEN: #2 Forminator 1.53.1 (still the vulnerable version), #4 auto-updates (only Redirection
+enabled of 23), #6 plugin backlog, #9 inactive plugins (**14 now — grew from 9**), #11 OPcache
+(`opcode_cache: not available`), #12 spam comments, #13 RUCSS scheduled action.
+Also: `WP_DEBUG_DISPLAY: true` while `WP_DEBUG: false` — the display flag should be false.
+
+**⚠️ SECURITY HEADERS ARE FLUCTUATING.** Observed two different header sets on live within
+~1 hour:
+- earlier: `strict-transport-security`, `x-content-type-options: nosniff`, `referrer-policy:
+  strict-origin-when-cross-origin`
+- now (8/8 consecutive checks): `x-frame-options: SAMEORIGIN`, `referrer-policy: same-origin`,
+  **no HSTS, no nosniff, no Permissions-Policy, no CSP**
+Likely mid-change (client was editing `.htaccess`). Do NOT report a fixed header state to the
+client until it stabilises. Note WP Engine ignores `.htaccess` anyway.
+
 ### MAINT#12 — ~160 spam comments with suspected malware URLs — 2026-11-18
 
 **Doc item:** High / Medium (1-2 h). Wordfence flagged ~160 comments + 1 trackback.
