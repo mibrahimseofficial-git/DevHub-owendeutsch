@@ -108,6 +108,83 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### functions.php REVIEW (client-supplied, live version) — 2026-11-24
+
+Client pasted the **live** `functions.php`. It differs from the repo zip in two ways:
+- **Contains the comment-feed 410 blocker** (`add_action('template_redirect', ...)` + `is_comment_feed()`)
+  at the very end. **This is NOT in the repo zip** — repo would revert it on next theme deploy.
+- **Contains `CC_Comment_Cleaner`** (the spam-cleanup admin page), also not in the repo zip.
+Both must be ported into `owendeutsch.zip` or the next deploy silently undoes them.
+
+#### 🔴 CRITICAL — hardcoded secrets in theme code, committed to git (34 commits)
+| Secret | Location | Value (do not paste in reports) |
+|---|---|---|
+| **SendGrid API key** | `owen_newsletter_user()` — 2 `curl` headers | `SG.RljqRy9qT5mWzJUiGd28MA....` |
+| **Google API key** | `my_acf_init()` → `acf_update_setting('google_api_key', ...)` | `AIzaSyAiwA3ml...` |
+| **REST API shared secret** | `get_custom_poster()` / `get_poster()` — `md5('hexa@123')` | `hexa@123` (weak, unhashed literal) |
+
+**This is the single most serious finding on the site.** The theme zip is in a git repo
+(`mibrahimseofficial-git/DevHub-owendeutsch`). Anyone with repo access has a live SendGrid key
+that can send email as the client's domain, plus a Google API key.
+**Action:** rotate the SendGrid key immediately (SendGrid dashboard → API Keys → delete + recreate),
+restrict the Google key by HTTP referrer + API in Google Cloud Console, move all three to
+`wp-config.php` constants or env vars, then **purge the secret from git history** (BFG/filter-repo)
+— deleting it in a new commit leaves it in all 34 prior commits.
+
+#### 🔴 CRITICAL — SQL injection, unauthenticated
+`odp_autocomplate()` (note the typo in the action name) is registered on **both**
+`wp_ajax_autocomplate` and **`wp_ajax_nopriv_autocomplate`**, i.e. reachable by anyone:
+
+```php
+$search = $_POST['q'];                       // no sanitisation at all
+"... post_title like '%$search%' ..."        // interpolated straight into SQL
+```
+
+Same pattern in `odp_search_birds_from_tags_and_keywords()`, `get_id_by_title()`,
+`cus_posts_where()`, `addEntry()` (`WHERE email = '".$email."'`), and
+`update_save_post_content_callback()`.
+
+**Verified live:** `admin-ajax.php` is reachable (GET 400, POST 200 — an earlier 403 was WAF noise).
+A `q=zzzznotabird' OR '1'='1` probe was **blocked by Cloudflare** (403 "Just a moment..."), so the
+WAF is currently masking this, but a WAF is a mitigation, not a fix. Do not rely on it.
+**Action:** `$wpdb->prepare()` everywhere, or `esc_sql()` at minimum. Highest priority after the
+SendGrid key.
+
+#### 🟠 Unauthenticated data exposure — `?test` handler
+`if (isset($_GET['test']))` at **global scope** runs a full `WP_Query` over all lodges + all 8,978
+birds on **every anonymous request** to any URL with `?test`. Measured earlier: **8.76s, 209 KB**.
+It is also a trivial CPU/memory amplification vector. **Delete it** (or wrap in
+`current_user_can('manage_options')`).
+
+#### 🟠 Debug output leaking to anonymous visitors
+`if (isset($_GET['navnav']))` echoes `<pre>` blocks on the public site. `admin_notices` dumps the
+**full taxonomy list** on every admin page (no capability check, no screen check).
+`force_post_categ()` and `wpse_59871_script_enqueuer()` also inject admin JS globally.
+**Action:** remove or gate behind `current_user_can('manage_options')`.
+
+#### 🟠 Custom REST endpoint with a guessable key
+`register_rest_route('api/v5', '/poster', ...)` is public and authenticates on
+`md5('hexa@123')`. `get_custom_poster()` returns 250 bird records (title, slug, featured image,
+tags, dates). `get_poster()` returns **every attachment ID + GUID** in the database.
+`md5()` of a 9-char string is not a secret. **Action:** delete `get_poster`, move the poster
+endpoint to a real capability or a long random token stored in `wp-config.php`.
+
+#### 🟡 `cron-requests.log` written into `wp-content/`
+`my_log_cron_request()` does `file_put_contents(WP_CONTENT_DIR . '/cron-requests.log', ...)` on
+**every cron request** — unbounded growth, no rotation. Currently **403** (blocked), but it is one
+`.htaccess`/rule change away from being a public log of every cron URL. **Action:** remove it, or
+send to `error_log()`.
+
+#### 🟡 Misc
+- `add_filter('posts_where', 'cus_posts_where', 10, 2)` runs on **every** query site-wide, building
+  `LIKE '%...%'` chains from `$_GET`. Contributes to the 8.76s `?test` time.
+- `add_action('pre_get_posts', 'rlv_manage_queries')` — the function is declared *after* the
+  `add_action`, which works but is fragile.
+- `classic-editor` is still installed; `wpse_59871_script_enqueuer()` hides the inline-edit UI for
+  `cp_birds` via JS rather than a filter.
+- `add_filter('widget_text', 'do_shortcode')` is a known XSS amplifier if any widget text is
+  editable by a lower-privileged role.
+
 ### COMMENT LOCKDOWN VERIFIED ON LIVE — 2026-11-24
 
 Client reports all comment points done. **Re-verified independently — all four pass:**
