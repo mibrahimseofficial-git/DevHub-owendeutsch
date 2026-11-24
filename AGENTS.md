@@ -108,6 +108,90 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### LIVE PLUGIN AUDIT AFTER CLEANUP — 2026-11-24 (client supplied wp-admin plugin list)
+
+**24 plugins installed, 22 active, 2 inactive.** Client deleted 11. Verified live post-cleanup:
+all pages 200, no broken assets (26 referenced, 0 broken; one transient 429 on loader.svg that
+retried 200).
+
+#### 🔴 MapSVG PRO DELETED — tables survived, but this is now a landmine
+Client deleted **MapSVG Pro**. Free **MapSVG 9.0.13** remains but is **INACTIVE** and shows
+"You cannot delete this plugin as other plugins require it / Required by: MapSVG Pro" — a stale
+dependency record now pointing at a deleted plugin.
+
+**The theme queries MapSVG's tables directly** (`wp_mapsvg_regions_486`, `wp_mapsvg_schema`) in
+`functions.php` (L649, L660, L2320, L2345) and in two **`nopriv` AJAX handlers**:
+- `wp_ajax_nopriv_get_country_bird` — used by `/globe/` to colour enabled countries
+- `wp_ajax_nopriv_get_country_code` — used by the globe click-through
+
+**Verified still working right now** (tables were NOT dropped by the plugin deletion):
+- `get_country_bird` → 200, 3,307 bytes, returns AR/BS/BE/BZ… all `status:1`
+- `get_country_code&cnt_id=4` → `{"status":true,"cnt_code":"AR"…}`
+- `/globe/` 200 (77,912 B), `/countries/` 200 (78,472 B), `/cp_birds_country/{ar,be,br,ca,us}/` all 200
+
+**So the site is fine today, but:**
+1. **Never run "delete unused tables" / a MapSVG uninstall cleanup** — it would drop
+   `wp_mapsvg_regions_486` and `wp_mapsvg_schema`, and the globe would silently lose all country
+   highlighting and click-through.
+2. **Never delete the inactive free MapSVG plugin** — its admin screens are the only UI for that
+   table. Without it the data is editable only via SQL.
+3. **The tables are now orphaned** — no plugin manages them. Add a **DB backup before any
+   WP Engine "clean up" or hosting migration**.
+4. If the client wants the dependency warning gone, deactivate is already done; do **not** click
+   Delete on MapSVG free.
+
+#### ⚠️ WP Rocket appears to be gone — contradicts earlier assumption
+`wp-content/plugins/wp-rocket/` → readme **404**, no `wp-rocket` string in page HTML.
+Homepage cache headers show only `x-cache: MISS`, `cf-cache-status: MISS`, `x-cacheable: SHORT` —
+**no WP Rocket signature**. AGENTS.md previously assumed WP Rocket 3.21.2 was licensed and active.
+**It is not in the current 24-plugin list.** Either it was removed or it was never on this install.
+**Consequence:** the documented purge chain ("WP Rocket → WP Engine → Cloudflare") is wrong now —
+purging must be **WP Engine cache → Cloudflare** only.
+
+#### ✅ Autoptimize 3.1.17 is doing CSS optimisation
+Homepage references 6+ `autoptimize/css/autoptimize_single_*.css` files. This supersedes part of
+the earlier "enable WP Rocket minify" recommendation for **CSS**. HTML is still **unminified**
+(208,868 B, 148 newlines) — Autoptimize's HTML minify is not on, or is not applying.
+
+#### Page health after deletions (all 200)
+`/` 208,868 · `/globe/` 77,912 · `/grid/` 65,236 · `/countries/` 78,472 · `/blog/` 154,200 ·
+`/entry/` 61,443 · `/conservation/` 65,007 · `/birding-sites-and-lodges/` 214,228 ·
+`/my-recent-photos/` 335,849 · `/llms.txt` 1,525 · `/?s=toucan` 200 (359,008)
+
+#### ⚠️ Search URL regression — `/search/?s=toucan` → 404
+`/search/` alone → 200, `/?s=toucan` → 200, but **`/search/?s=toucan` → 404 (45,743 B)**.
+The theme's `od_llms_txt()` advertises `/search/` as a core resource. Someone appending a query to
+the pretty URL gets a 404. Likely the `preg_replace` on `posts_where` in `cus_posts_where()` or
+`rlv_manage_queries()` mangling the query. **Needs investigation** — real user-facing bug.
+
+#### Plugin inventory — 24 installed
+**Active & required (do not touch):** ACF Pro 6.8.12, Autoptimize 3.1.17, Bird Analytics 1.0.0,
+Category Order & Taxonomy Terms Order 2.1, Entry Counter 1.0, Forminator 1.58.6, Hide Featured
+Image 1.3.1, Imagify 2.3.5, Migrate Guru 6.72, Missed Schedule Post Publisher 2.4, Past Newsletter
+Entries 1.0, Popup Maker 1.25.0, reCaptcha by BestWebSoft 2.1, Redirection 5.10.1, Regenerate
+Thumbnails 3.1.6, Smash Balloon Instagram Feed 6.17.0, String Locator 2.6.8, BlogVault 6.85,
+WP Activity Log 5.7.0, YITH Infinite Scrolling 2.14.0, Yoast Duplicate Post 4.7, Yoast SEO 28.9
+**Inactive:** MapSVG 9.0.13 (**keep** — see above), Wordfence 9.1.1 (**activate for 2FA**)
+
+**Deleted by client:** Akismet, Classic Editor, Export All URLs, MapSVG Pro, Reorder by Term,
+ReOrder Posts within Categories, Slider and Carousel Plus Widget for Social Media, Tumblr Importer,
+WP All Export, WP Content Copy Protection, WP Crontrol, WP Import Export Lite
+
+#### ⚠️ Akismet was deleted
+Akismet is now gone. The **Comment Cleaner** class in `functions.php` is the only spam control
+left, and commenting is already disabled. Acceptable — but if commenting is ever re-enabled,
+spam filtering must be reinstated first.
+
+#### ⚠️ Wordfence: installed but INACTIVE on live
+Live now has **Wordfence 9.1.1 installed, Deactivate/Delete shown = currently INACTIVE.**
+(Earlier probe returned 404 on readme.txt and I wrongly reported "not installed" — the readme is
+not served on this host; `.php` returns 403 for every path, so it is a useless signal.)
+**2FA is therefore still OFF on live.** Activating Wordfence is step 1 of the 2FA rollout.
+
+#### Staging is now far behind
+Staging Forminator **still 1.53.1** (vulnerable). Staging still has the slider plugin active, the
+comment feed open, the spam widget, and the static BirdingTop500 PNG.
+
 ### 2FA ROLLOUT — "DO NOT REMOVE ANY USER ACCOUNTS" — 2026-11-24
 
 Client (Claire) constraint: **every existing WP user account must remain untouched.** Only 2FA,
