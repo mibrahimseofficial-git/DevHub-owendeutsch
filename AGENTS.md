@@ -108,6 +108,59 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### CORRECTION — Birding Top badge IS the "tracking code" (client is right) — 2026-11-24
+
+My earlier note said "no tracking code" in the footer. **Technically true, but misleading.**
+The client is correct: `button.php?u=owendeutschphotography005` **is** the tracking mechanism.
+Birding Top 1000's own homepage states it is *"the ranking by traffic site for birders"* — the
+badge image URL carries the account ID and every fetch is logged server-side as a hit. It is an
+image beacon, not a JS pixel: no cookie, no script, no client-side tracking. But removing the
+hotlink **removes the site from the ranking**.
+
+**FULL HISTORY of this block (from git, theme zip):**
+
+| Commit | Date | Change |
+|---|---|---|
+| (original) | — | Commented-out block, **hotlinked** `button.php?u=owendeutschphotography005`, alt "Top 1000" |
+| `7e40cec` | 2026-11-03 21:49 | **Task 2: removed the block entirely** (birdingtop500.com was HTTP 000 / 20s timeout) |
+| `363bbf6` | 2026-11-16 16:06 | **Restored** — server back online, uncommented, added `target=_blank rel=noopener` |
+| `e303751` | 2026-11-16 19:43 | Added `width/height/loading=lazy`, dropped `border` |
+| `a1a666f` | 2026-11-16 19:47 | Reverted `e303751` |
+| `3b3b2de` | 2026-11-16 20:23 | **Self-hosted** the PNG (`images/birdingtop500.png`), dropped the hotlink |
+| **(client)** | ~2026-11-20+ | **Client re-added the hotlink on LIVE** |
+
+**LIVE right now (2026-11-24), exact markup:**
+```html
+<a href="https://www.birdingtop500.com/" target="_blank" rel="noopener">
+  <img src="https://www.birdingtop500.com/button.php?u=owendeutschphotography005"
+       alt="Birding Top 500" width="207" height="83" loading="lazy" border="0">
+</a>
+```
+
+**⚠️ REPO AND LIVE ARE NOW DIVERGED.** Repo `footer.php:101` = self-hosted
+`$THEME_PATH/images/birdingtop500.png`. Live = hotlinked `button.php`. Both images exist on live
+(the self-hosted PNG still returns 200, 24,199 bytes — leftover from our deploy).
+**A theme deploy from this repo would silently revert the client's change.** Repo must be synced
+to the hotlinked version before the next deploy.
+
+**Why we self-hosted originally (`3b3b2de`):** button.php is a small hobby server that was
+**fully offline for months** (HTTP 000 / 20s timeout in Nov 2025) and still fails intermittently.
+When it fails the browser renders alt text. That risk is real and returns with the hotlink.
+
+**Cost of the hotlink:** `cache-control: no-cache, no-store, must-revalidate` + `expires: 0` →
+**uncached on every page view**. Across ~2,535 HTML pages that is one third-party request per
+view, plus a hard dependency on their server for the footer to render correctly.
+
+**Trade-off for client:** hotlink = counted in the ranking, but slower + fragile.
+self-host = fast + reliable, but **not counted**. The client has chosen the ranking.
+
+**Action:**
+1. Sync repo `footer.php` to the hotlinked markup so the next deploy does not revert it.
+2. Fix `alt` → "Birding Top 1000" (site is "Birding Top 1000", live says "Top 500").
+3. Drop deprecated `border="0"` while keeping `width/height/loading=lazy`.
+4. Optionally add `decoding="async"`.
+5. Tell the client: if the badge ever shows as text, birdingtop500 is down again.
+
 ### TRACKING CODE AUDIT — footer / header — 2026-11-24
 
 **Question asked:** is there tracking code in the footer for "Birding Top"?
