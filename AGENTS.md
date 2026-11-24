@@ -301,6 +301,32 @@ their own crawl. Do not fabricate this list for Claire.
 - `bhpho.to` × 19 and `instagram.com` return **403/429 = bot-blocking, NOT dead**. Do not report.
 - `sachalodge.com` and `wildsumaco.com` are **live** — curl fails, browsers succeed (confirmed).
 
+### 🔁 WORKFLOW CHANGE — 2026-11-24: LIVE-FIRST, then copy live -> staging
+
+Client instruction: **do not touch staging. Finish everything on live, then push live -> staging**
+via WP Engine "Copy site" if the plan allows it.
+
+This inverts the previously documented "staging first -> sign-off -> live" rule **for this phase**.
+It is safe to do here because alice is already AHEAD of staging in both theme code and DB content
+(staging Forminator 1.53.1, staging still lacks the dims fix and the badge). Copying live->staging
+therefore *upgrades* staging rather than rolling anything back.
+
+**Standing rule still unchanged and important:** NEVER copy staging -> live. Live carries content
+and DB rows staging does not have (real comments, real ACF lodge values, live post edits).
+
+#### Consequence to accept
+Live-first means **no rehearsal environment**. Every live change is un-rehearsed. Mitigations:
+1. WP Engine restore point immediately before each batch.
+2. One item at a time, verified between items (not a single big push).
+3. For the comment purge (124,212 rows) use a **DB snapshot**, not just a file backup.
+4. Skip the "Recent Comments" widget check until after the purge, since the widget renders from
+   the same rows being deleted.
+
+#### ⚠️ Accepted risk (client decision, noted once, not re-litigated)
+Staging remains on **Forminator 1.53.1 (unauthenticated stored XSS)** and is publicly reachable at
+`owendeutsc2stg.wpenginepowered.com`. Left as-is by instruction. Revisit if staging is indexed or
+shared externally.
+
 ### LIVE DEPLOY VERIFIED — 2026-11-24 (theme uploaded to owendeutsch.com)
 
 Client uploaded `owendeutsch.zip` (sha256 add97059…) to **live**. Verified against production HTTP.
