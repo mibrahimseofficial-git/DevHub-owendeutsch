@@ -242,6 +242,65 @@ extensions, and revert the badge.
 
 **Correct deploy unit = `owendeutsch.zip` from `development`.** Never a staging DB/file sync.
 
+### CLIENT MESSAGE DECODED — "3 typos + 9 rebranded links + 4 plain text + 11 partner pages" — 2026-11-24
+
+Client asked us to act on a remediation list. **None of these counts exist in our records** —
+not in `AGENTS.md`, not in `Owen-Deutsch-SEO-Audit-Presentation-Final.pdf`, not in the
+maintenance docx, not in any commit message. So this is a *new* list from the client's own
+tool (or their dev). Do not invent the 11 partner pages. Measured reality on live instead:
+
+#### 1. "3 one-character typos" — measured 3, but NOT the class you'd expect
+Full crawl (242 of 457 sitemap pages fetched) + href-level scan found exactly **3 distinct
+malformed external hrefs**:
+| # | Page | Defect |
+|---|---|---|
+| 1 | `/greater-flamingo-the-dramatic-migrator/` | `…1787135047?tag=smarturl-20` + **U+FEFF** trailing |
+| 2 | `/how-birds-experience-the-fourth-of-july/` | FWS URL — `&amp;` HTML entity never decoded in the href |
+| 3 | `/how-bird-friendly-coffee-helps-bird-conservation/` | global.si.edu URL — same `&amp;` defect |
+
+Items 2 and 3 are **entities, not typos** — a `&`-in-URL that was pasted into a field and got
+HTML-escaped. Different fix, same one-character feel.
+
+The three *known* stragglers are now **2 fixed, 1 remaining**:
+- `doi.org/…2.0.CO;2)` trailing `)` → **GONE** ✅
+- `marylandbiodiversity.com/…engstrom_2023.pdf.` trailing `.` → **GONE** ✅
+- `amazon…?tag=smarturl-20` U+FEFF → **STILL PRESENT** ❌ (this is #1 above)
+
+#### 2. "9 rebranded/moved blog links" — all the known moves are ALREADY DONE
+Every old URL from the researched remediation table is **gone from live**:
+`abcbirds.org/article/*` (5) · `abcbirds.org/blog20/*` · `seattle-audubon-nature-shop` ·
+`ecoanperu.org/indexeng.html` · `conserva-aves.org/en/home-english/` ·
+`chicagobirder.org/cos-labagh-woods-project` · `visittoledo.org/birding-in-northwest-ohio` ·
+`felzfotoz.com/portfolio-1/portfolio-italy` · `birdsnotmosquitoes.org/frequently-asked-questions`
+
+That is **12 replacements already live** (verified 2026-11-18, re-verified today). If the client
+is asking for 9 more, we need their list — we cannot see 9 outstanding moved links.
+
+#### 3. "4 permanently dead sites → plain text" — CONFIRMED, exact targets
+| Domain | Page | Anchor text | Status | Fix |
+|---|---|---|---|---|
+| `africanpenguinsafe.org` | `/african-bird-focus-south-africa/` | "here" | **530** | unlink |
+| `dunesnationalpark.org` | `/lodges/indiana-dunes-national-park-indiana-usa/` | "Indiana Dunes National Park – Indiana, USA" | **522** | set ACF `site_url` empty |
+| `beyourownbirder.com` | `/the-fun-of-fall-migration/` | "BeYourOwnBirder.com" | **RemoteDisconnected** | unlink |
+| `lincolnparkconservancy.org` | `/lodges/north-pond-illinois-usa/` | "lincolnparkconservancy.org" | **RemoteDisconnected** | set ACF `site_url` empty |
+
+The two lodge ones are **ACF `site_url` postmeta** → clearing the field makes the H1 render as
+plain text automatically (theme guard `if ( $lodge_site_url )`). No theme deploy needed.
+The two blog ones are **post content** → String Locator / block editor.
+
+#### 4. "11 removed partner pages for Claire" — CANNOT PRODUCE FROM OUR DATA
+63 of 89 lodge pages currently render a **bare `<h1>` with no partner link**. That is not 11.
+Most are bare because `site_url` was never filled in — not because a partner was removed.
+There is no record anywhere of an 11-page removal. **Ask the client which list they mean** —
+likely candidates: (a) the 63 never-linked lodges, (b) the 4 just fixed, (c) something from
+their own crawl. Do not fabricate this list for Claire.
+
+#### Crawl caveats (repeat of the 2026-11-11 lesson)
+- Only **242 / 457** sitemap pages fetched — BlogVault Firewall / Cloudflare throttles this IP.
+  Counts are a floor, not a ceiling.
+- `bhpho.to` × 19 and `instagram.com` return **403/429 = bot-blocking, NOT dead**. Do not report.
+- `sachalodge.com` and `wildsumaco.com` are **live** — curl fails, browsers succeed (confirmed).
+
 ### LIVE DEPLOY VERIFIED — 2026-11-24 (theme uploaded to owendeutsch.com)
 
 Client uploaded `owendeutsch.zip` (sha256 add97059…) to **live**. Verified against production HTTP.
