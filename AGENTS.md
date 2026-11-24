@@ -108,6 +108,32 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### COMMENT LOCKDOWN VERIFIED ON LIVE — 2026-11-24
+
+Client reports all comment points done. **Re-verified independently — all four pass:**
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `/comments/feed/` | **410 Gone** — stable across 5 consecutive probes (an earlier single 403 was WAF/edge noise, not the real state) |
+| 2 | Recent Comments widget | **GONE** — `/2024/`, `/2024/05/`, `/category/conservation/`, `/blog/` all return `li=0 widget=0` (previously 5 spam items each on date archives) |
+| 3 | Comment form on posts | **GONE** — `form=0` on 4 sampled posts. `single.php:29 comments_template()` is commented out, so only an empty `<div class="comment-template">` renders |
+| 4 | `wp-comments-post.php` | **403** on both GET and POST — submission endpoint closed |
+
+**Spam comments themselves: no longer visible anywhere.** All three public surfaces (feed, widget,
+post pages) are clean. Deletion is complete as far as an anonymous visitor can observe.
+
+**Note on `/2024/05/feed/` → 200:** this is the normal **post** feed (4 blog items from May 2024),
+NOT a comment feed. Verified by parsing: `<rss>` root, items are "What's in a Name?",
+"Remarkable Bird Eyes", "Coming Home", "Down Indy Dunes". Not a leak.
+
+**Residual cosmetic issue (not a security problem):** every post still emits
+`<link rel="alternate" type="application/rss+xml" title="... Comments Feed" href=".../comments/feed/" />`
+in the `<head>`. The URL now returns 410, so it is dead, but the dangling link tag remains. Harmless;
+can be removed via `remove_action('wp_head','feed_links_extra',3)` if the client wants it clean.
+
+**Still open elsewhere:** staging has NOT had any of this applied (still serves the comment feed and
+the old theme), and staging is still on Forminator 1.53.1.
+
 ### FORMINTOR UPDATE — LIVE DONE, STAGING LAGGING — 2026-11-24
 
 **LIVE: 1.58.6 ✅** — verified `/entry/` asset URLs now carry `ver=1.58.6` (was 1.53.1).
