@@ -242,6 +242,57 @@ extensions, and revert the badge.
 
 **Correct deploy unit = `owendeutsch.zip` from `development`.** Never a staging DB/file sync.
 
+### LIVE DEPLOY VERIFIED — 2026-11-24 (theme uploaded to owendeutsch.com)
+
+Client uploaded `owendeutsch.zip` (sha256 add97059…) to **live**. Verified against production HTTP.
+
+#### ✅ The three deploy goals all landed
+
+| Goal | Before | After | Verdict |
+|---|---|---|---|
+| Homepage `<img>` missing dims | **20 / 22** | **9 / 22** | ✅ as predicted |
+| Content images with dims | 0 / 11 | **11 / 11** | ✅ |
+| Footer badge | hotlink | hotlink | ✅ preserved |
+| `/comments/feed/` | 410 | **410** (3 probes) | ✅ preserved |
+
+All 11 content `<img>` now carry correct dimensions:
+`Bird-Profile-Pages-USA.png 1080×769` · `…Wild-Turkey….png 831×758` (×2) ·
+`search-icon.png 32×32` · `…Piping-Gu….png 831×758` (×2) · `owendeutsch.png 460×502` ·
+`BotTA-Graphic.png 655×532` (×2) · `instagram-owl….png 112×171`
+
+**The 9 remaining are exactly the predicted set — no surprises:**
+`bird-loader.gif`, `logo.png` ×2, `loader.svg`, `close-btn.png` (theme chrome, intentionally
+unsized) + **`placeholder.png` ×4** (Smash Balloon Instagram Feed fallback).
+
+#### ✅ No regressions
+- Pages: `/` 209,071 · `/globe/` 77,919 · `/grid/` 65,243 · `/countries/` 78,479 ·
+  `/blog/` 154,204 · `/entry/` 61,450 · `/conservation/` 65,014 ·
+  `/birding-sites-and-lodges/` 214,235 · `/my-recent-photos/` 335,856 — all **200**
+- Country taxonomy `/cp_birds_country/{ar,be,br,ca,us}/` — all **200**
+- Assets: 14 checked, **0 broken**
+- `get_country_bird` → 200, 3,307 B (globe data intact after MapSVG Pro deletion)
+- Forminator **1.58.6** still active; `/entry/` fields intact
+  (`name-1`, `name-2`, `email-1`, `consent-1`, nonce, `form_id`)
+
+#### ⚠️ `get_country_code` returns "Code not found" for cnt_id=4
+`{"status":false,"operation":"","cnt_code":"","cnt_status":0,"msg":"Code not found"}`
+
+`get_country_bird` returns a record where `cntry_id=4`, `cntry_select_id=32`, `cnt_code=AR`.
+So **`cnt_id` must be `cntry_select_id` (32), not `cntry_id` (4)**. The handler is fine; the
+earlier test used the wrong key. Not a bug — but confirm the globe click-through passes
+`cntry_select_id`.
+
+#### ⚠️ WAF note
+`admin-ajax.php` intermittently returns **403 (5,669 B Cloudflare block page)** then **200** on
+retry. Treat a single 403 as inconclusive; always retry with a browser UA and
+`X-Requested-With: XMLHttpRequest`.
+
+#### Still open after this deploy
+- Live Instagram feed: 4 × `placeholder.png` (broken feed, not a theme issue)
+- `/search/?s=` → 404
+- 2FA (Wordfence installed, inactive)
+- Staging still on Forminator 1.53.1 + `.php` Autoptimize assets
+
 ### DEPLOY ARTIFACT READY — 2026-11-24 (final)
 
 **`owendeutsch.zip` on `development` is deploy-ready.**
