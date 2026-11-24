@@ -391,7 +391,7 @@ binary: `curl -sL -o php83.tgz https://dl.static-php.dev/static-php-cli/common/p
 Source: client pasted the live Plugins screen (24 items, 22 active, 2 inactive). The
 "successfully deleted" banners in that screen are the ground truth.
 
-**12 plugins deleted from LIVE:**
+**13 plugins deleted from LIVE:**
 1. Akismet Anti-spam: Spam Protection
 2. Classic Editor
 3. Export All URLs
@@ -406,7 +406,7 @@ Source: client pasted the live Plugins screen (24 items, 22 active, 2 inactive).
 12. WP Crontrol
 13. WP Import Export Lite
 
-(That is 13 names; #9 WordPress Importer was missing from the earlier inferred list.)
+(WordPress Importer was missing from the earlier inferred 12-name list.)
 
 #### 🔴 CRITICAL — I reported these as "still present". THEY ARE NOT. My probe was poisoned.
 First probe returned `HTTP 200` + real readme bodies for `akismet`, `classic-editor`,
