@@ -108,6 +108,57 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### ARE THE IMAGE DIMENSIONS RESPONSIVE-SAFE? — 2026-11-24 (verified in CSS)
+
+**Yes. Verified, not assumed.** `od_image_size_attrs()` emits plain HTML `width`/`height`
+attributes. Modern browsers derive `aspect-ratio` from those and use a **default
+`object-fit: contain`**-style mapping — the intrinsic ratio is preserved while the picture scales.
+
+#### The decisive rule
+`css/style.css` (first stylesheet in `wp_enqueue_style` order):
+
+```css
+img { border: none; max-width: 100%; height: auto; ... }
+```
+
+- `max-width: 100%` → no horizontal overflow at any viewport
+- `height: auto` → the attribute is overridden; the browser recomputes height from the width and
+  the **intrinsic ratio encoded by the `width`/`height` attributes**
+
+That `height: auto` is exactly what makes this safe. Without it, a hard-coded `height="758"` would
+force the image to stay 758 px tall on a 375 px phone.
+
+#### Load order confirmed
+`bootstrap.min.css` → `fancybox` → `fonts` → `jquery-ui` → `owl.*` → **`style.css`** →
+**`responsive.css`** (`responsive.css` is enqueued last, so it wins ties).
+
+#### No conflicts
+- `img` rules carrying `!important` are only `.image .p…` (max-width 36px) and `.acf-map img`
+  (max-width inherit — a map widget, not our images). Neither touches the homepage photos.
+- `bootstrap.min.css` puts `max-width:100%!important` on `img` — reinforces the above.
+- `.tilter__figure img` uses `max-height: 670px→500→450→430→350px` across breakpoints; the
+  homepage hero has both a `.tilter__image` and a `.bird-image` variant, and the responsive
+  fallbacks cover them.
+
+#### Verified correct values (staging, downloaded the real files)
+| File | Declared | Actual PNG | Match |
+|---|---|---|---|
+| Bird-Profile-Pages-USA.png | 1080×769 | 1080×769 | ✅ |
+| …Wild-Turkey….png | 831×758 | 831×758 | ✅ |
+| search-icon.png | 32×32 | 32×32 | ✅ |
+| …Piping-Gu….png | 831×758 | 831×758 | ✅ |
+| owendeutsch.png | 460×502 | 460×502 | ✅ |
+| BotTA-Graphic.png | 655×532 | 655×532 | ✅ |
+| instagram-owl….png | 112×171 | 112×171 | ✅ |
+
+All 7 match byte-for-byte against the PNG IHDR header. The helper reads real attachment metadata
+(`wp_get_attachment_image_src`) rather than guessing, so ratios are exact.
+
+#### Caveat — one case to watch
+`od_image_size_attrs()` returns an **empty string** when `attachment_url_to_postid()` cannot
+resolve the URL (image not in the media library). That is safe: the tag is emitted unchanged, so
+the image simply has no dimensions. It does not emit wrong dimensions.
+
 ### HOMEPAGE: STAGING vs LIVE DIFF — 2026-11-24 (measured, not inferred)
 
 Fetched both homepages fresh with random cache-busting. **Live 208,789 B / 22 `<img>`;
