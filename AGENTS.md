@@ -242,6 +242,40 @@ extensions, and revert the badge.
 
 **Correct deploy unit = `owendeutsch.zip` from `development`.** Never a staging DB/file sync.
 
+### DEPLOY ARTIFACT READY — 2026-11-24 (final)
+
+**`owendeutsch.zip` on `development` is deploy-ready.**
+`sha256 add97059b296a28621d8be70c665f05eaab9109ce74aaa1c185f79d49a8207b` · 3,314,079 bytes ·
+151 entries · zip root `owendeutsch/` (has `style.css` + `screenshot.png`).
+
+#### What is in it
+| Item | State |
+|---|---|
+| `templates/template-homepage.php` | 17 `od_image_size_attrs()` calls ✅ |
+| `footer.php` badge | `button.php?u=owendeutschphotography005`, `width="207" height="83"` ✅ |
+| `functions.php` comment-feed 410 | present ✅ |
+| `functions.php` `CC_Comment_Cleaner` | **REMOVED on client request** ❌ |
+
+Only `functions.php` differs from the previous repo zip (139,073 → 139,360 B).
+
+#### CC_Comment_Cleaner was removed — do not re-add
+Client disabled comments site-wide and explicitly does not want the admin cleaner.
+Rebuilt from the **pristine pre-splice zip** (`/tmp/owendeutsch.zip.orig`) rather than by
+deleting text, so no class remnants, no orphaned `add_comments_page`/`cc_batch_delete` hooks.
+
+**The 410 blocker was kept** — it is what makes `/comments/feed/` return 410 instead of 200,
+and it is independent of the cleaner.
+
+#### Verification performed
+- 43 PHP files lint clean under PHP 8.3.14 (static binary at `/tmp/php`)
+- Harness: `template_redirect` registers → `wp_die(... response=410)` fires
+- Harness: `class_exists('CC_Comment_Cleaner')` → **false**
+- `testzip()` clean, entry names identical, single-file diff
+
+#### Note on tooling
+The sandbox has **no root** — `apt-get install php-cli` fails. PHP linting requires the static
+binary: `curl -sL -o php83.tgz https://dl.static-php.dev/static-php-cli/common/php-8.3.14-cli-linux-x86_64.tar.gz && tar xzf php83.tgz`
+
 ### LIVE PLUGIN AUDIT AFTER CLEANUP — 2026-11-24 (client supplied wp-admin plugin list)
 
 **24 plugins installed, 22 active, 2 inactive.** Client deleted 11. Verified live post-cleanup:
