@@ -418,6 +418,44 @@ dependency record now pointing at a deleted plugin.
 4. If the client wants the dependency warning gone, deactivate is already done; do **not** click
    Delete on MapSVG free.
 
+### ⚠️ CORRECTION 2026-11-24 — "deleted by client" list was WRONG
+
+Re-probed both environments by fetching `/wp-content/plugins/<dir>/readme.txt` and **reading the
+body** (a bare HTTP 200 is not proof — the host serves `.php` as 403 and `readme.txt` 404 for some
+paths; always confirm the file body contains the plugin name).
+
+#### Still PRESENT and publicly served on LIVE (directory + files intact)
+| Plugin dir | Version | Note |
+|---|---|---|
+| `akismet` | 5.7.2 | **still on disk** — contradicts "Akismet was deleted" |
+| `classic-editor` | 1.7.0 | still on disk |
+| `export-all-urls` | 6.0 | still on disk |
+| `reorder-by-term` | trunk | still on disk |
+| `wp-all-export` | 1.6.0 | still on disk |
+| `wp-crontrol` | 2.0.0 | still on disk |
+| `slider-and-carousel-plus-widget-for-instagram` | 1.x | **still on disk on LIVE too** (not staging-only) |
+
+These directories being 200 with a real readme means the **files were NOT deleted** — at most the
+plugins were *deactivated*. The earlier claim "Client deleted 11" is unsupported by the live FS.
+Either the client deactivated only, or deleted then reinstalled, or the deletion happened on a
+different environment.
+
+#### Actually GONE (404 in both envs — genuinely deleted)
+`mapsvg-pro` · `reorder-posts-within-categories` · `slider-and-carousel-plus-widget-for-social-media` ·
+`tumblr-importer` · `wp-content-copy-protection` · `wp-import-export-lite`
+
+#### Staging differs for the remaining ones
+`tumblr-importer` and `wp-import-export-lite` are **present on staging, absent on live** → staging
+still carries 2 plugins live does not.
+
+**Consequence for the client deliverable:** do NOT send the "Deleted by client: …" 12-name list as
+fact. It is not verifiable and at least 6 of the 12 are still resident on live. The only
+defensible answer is a fresh wp-admin plugin screen export, or WP-CLI `wp plugin list` per env.
+
+**Method note for future audits:** `readme.txt` 200 + body containing the plugin header = present.
+`readme.txt` 404 = directory absent (unless the plugin ships no readme — Spot-check with a known
+asset like `assets/` or the main `.php` file before declaring it deleted).
+
 #### ⚠️ WP Rocket appears to be gone — contradicts earlier assumption
 `wp-content/plugins/wp-rocket/` → readme **404**, no `wp-rocket` string in page HTML.
 Homepage cache headers show only `x-cache: MISS`, `cf-cache-status: MISS`, `x-cacheable: SHORT` —
