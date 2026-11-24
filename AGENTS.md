@@ -108,6 +108,57 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### TRACKING CODE AUDIT — footer / header — 2026-11-24
+
+**Question asked:** is there tracking code in the footer for "Birding Top"?
+
+**Answer: NO tracking code.** The footer block is a plain badge `<a><img></a>`. But the badge is
+**hotlinked to a third-party PHP endpoint**, and the theme header carries **four real trackers**.
+
+**FOOTER — `footer.php:99-106` (repo):**
+```html
+<a href="https://www.birdingtop500.com/" target="_blank" rel="noopener">
+  <img src="<?php echo $THEME_PATH; ?>/images/birdingtop500.png" alt="Birding Top 1000 Websites" border="0">
+</a>
+```
+**LIVE differs from repo** — live is hotlinked, not a local file:
+```html
+<img src="https://www.birdingtop500.com/button.php?u=owendeutschphotography005" alt="Birding Top 500" width="207" height="83" loading="lazy">
+```
+- `button.php` → **200**, `image/png`, 24,199 bytes, real 207x83 PNG (matches HTML attrs).
+- Account ID: **`owendeutschphotography005`**.
+- Sends `cache-control: no-cache, no-store, must-revalidate` + `expires: 0` → **never cached**, so
+  every page view hits birdingtop500.com. That is a third-party request + a view counter on their
+  side, not analytics on ours.
+- Alt text mismatch: repo says "Top 1000", live says "Top 500".
+- **Recommendation:** download the badge, host locally in the theme, keep the outbound link.
+
+**HEADER — `header.php`, four trackers load on EVERY page (all confirmed reachable 200):**
+
+| Line | Tracker | ID | Note |
+|---|---|---|---|
+| 20-27 | **GA4** `gtag.js` | `G-KYQ10WWELQ` | current |
+| 44-51 | **Universal Analytics** `analytics.js` | `UA-3248496-1` | ⚠️ **dead property** — UA sunset 2023-07-01; sends data to nothing, pure page-weight cost |
+| 53-65 | **Facebook Pixel** + noscript img | `723046811532883` | live |
+| 67-75 | **LuckyOrange** (`__lo_site_id`) | `220193` | session recording/heatmaps — `d10lpsik1i8c69.cloudfront.net/w.js` 200 |
+
+**Also in header:** `msvalidate.01` Bing verification (line 10) — benign. `oss.maxcdn.com`
+html5shiv/respond (lines 14-16) — dead CDN, inside `[if lt IE 9]` so never loads in modern browsers.
+
+**Footer Mailchimp** (`footer.php:20-21, 67-68`): CSS from `cdn-images.mailchimp.com`, JS from
+`s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js`, form posts to
+`owendeutsch.us18.list-manage.com`. This is a newsletter signup, not a tracker.
+
+**Privacy exposure:** GA4 + Facebook Pixel + LuckyOrange (session recording) all fire without a
+consent gate. For a site with an EU/UK audience this is a GDPR concern — LuckyOrange records
+keystrokes/mouse movement. **Flag to client.**
+
+**Recommended cleanup (theme, staging first):**
+1. Remove the UA-3248496-1 block (`header.php:43-51`) — dead, zero loss.
+2. Decide on LuckyOrange (`header.php:67-75`) — heavy, and the biggest privacy item.
+3. Self-host the Birding Top badge; fix alt text to match live ("Top 500").
+4. Consider consent gating for GA4/FB Pixel.
+
 ### COMMENT CLEANER RESULTS + SITE-HEALTH DELTA — 2026-11-20
 
 **Comment Cleaner (client-supplied plugin) ran on live.** Sample of 500 random APPROVED
