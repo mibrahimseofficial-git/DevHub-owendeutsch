@@ -108,6 +108,58 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### 2FA ROLLOUT — "DO NOT REMOVE ANY USER ACCOUNTS" — 2026-11-24
+
+Client (Claire) constraint: **every existing WP user account must remain untouched.** Only 2FA,
+cleanly, no lockouts. Nothing below deletes, edits, demotes, or re-passes any account.
+
+**2FA plugin state (probed both envs):**
+| Env | Wordfence | Any other 2FA plugin |
+|---|---|---|
+| **LIVE** | **404 — not installed** | none (probed 9 candidates) |
+| **STAGING** | **present, v9.1.1** | none |
+
+**LIVE HAS ZERO 2FA TODAY.** So this is an install-and-configure job, not a config change.
+
+#### ⚠️ New finding — user enumeration is OPEN on live
+`/wp-json/wp/v2/users` → **200**, returns the full list:
+| id | slug | name |
+|---|---|---|
+| 2 | `owendeutsch` | Owen Deutsch |
+| 3 | `clairegillman` | claire gillman |
+| 18 | `clairewisegenstudio-com` | Claire Gillman |
+
+Only **3 accounts total** (page 2 returns `[]`). No `roles` field exposed. `/wp-json/wp/v2/users/2`
+also leaks the author archive URL and Gravatar hash.
+
+This matters directly for 2FA: an attacker already has all three **login names**. Combined with no
+2FA and no visible login rate-limit on live, the only thing standing between them and wp-admin is
+the password. The theme's `kl_block_user_enumeration_attempts()` blocks `?author=N` (403) but does
+**not** block the REST endpoint — that is the gap.
+
+**Fix (theme, no account changes):** filter `rest_endpoints` to drop the users route for
+non-logged-in requests, or `rest_authentication_errors` to require auth for `/wp/v2/users`.
+
+#### Safe 2FA procedure — zero lockout risk
+1. **Backup + WP Engine restore point** (non-negotiable; this is the rollback).
+2. Install **Wordfence** on live (staging already runs 9.1.1 — proven).
+3. `Wordfence > Login Security > Settings`:
+   - Enable **2FA**.
+   - **Leave the grace period ON** (default 2 days). Do **not** set 0.
+   - **Do NOT** tick "require 2FA" / "enforce for all users" yet.
+   - Leave **"Allow remember me"** on so a device is not re-prompted daily.
+4. **Enrol one admin at a time.** Have that person scan the QR, then **log out and log back in**
+   to prove it works **before** moving to the next account.
+5. Only after all three accounts are enrolled, optionally enable enforcement.
+6. **Break-glass, always available:** WP Engine portal → SSH → rename
+   `wp-content/plugins/wordfence` to disable 2FA instantly. Keep portal access confirmed *before*
+   step 3.
+
+**Do not** use "reset all 2FA" or "require 2FA immediately" toggles — those are the lockout paths.
+
+**Accounts to enrol (all 3, none removed):** `owendeutsch` (id 2), `clairegillman` (id 3),
+`clairewisegenstudio-com` (id 18).
+
 ### functions.php REVIEW (client-supplied, live version) — 2026-11-24
 
 Client pasted the **live** `functions.php`. It differs from the repo zip in two ways:
