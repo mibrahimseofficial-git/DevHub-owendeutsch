@@ -108,6 +108,116 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### PHASE 1-2 CLOSE-OUT AUDIT — 2026-11-24 (client approved 5 workstreams)
+
+**HARD BLOCKER: we have NO admin access to either environment.**
+`/wp-admin/` and `/wp-login.php` return **403** on live AND staging. No WP-CLI, no SSH/SFTP,
+no WP Engine portal credentials, no `wp-json/wp/v2/plugins` (403). Deploy = client drops
+`owendeutsch.zip`; DB/plugin/comment work = client in wp-admin. Everything below is either
+**repo work (done)** or **an instruction sheet the client must execute**.
+
+#### 1. COMMENTS — "delete all 124,212"
+**Number is wrong.** Last measured approved-comment count was **500** (Comment Cleaner run,
+493 = 98.6% spam). 124,212 is almost certainly the **total row count of `wp_comments`
+including spam/trash**, not approvable comments. Client should confirm in
+`wp-admin > Comments > All | Spam | Trash` before deleting, so real comments are not lost.
+
+**Current state (live-verified 2026-11-24):**
+- `comments/feed/` → **200**, `application/rss+xml`, **10 items**, newest **16 Jul 2026**.
+  NOT disabled yet. (An earlier probe returned 403 — transient, re-test returned 200.)
+- Recent Comments widget **still rendered**: `/2024/` → 5 items, `/2024/05/` → 5 items.
+  Confirmed spam authors: `Anthony Brown` → `sampletemplatex1234.info`, `创建免费账户`,
+  `Binance推荐奖金`, `www.binance.info sign up`, `binance signup`.
+- `/category/conservation/` and `/blog/` → 0 (widget only on date archives).
+- `single.php:29` `comments_template()` is commented out, so no comments render on posts.
+
+**Exact client steps:**
+1. Backup (BlogVault) + WP Engine restore point.
+2. `wp-admin > Comments`: filter **All**, empty **Trash**, then bulk-select **Delete Permanently**.
+   If >1 page, raise "Screen Options > Number of items per page" to 999.
+3. `Settings > Discussion`: **uncheck** "Allow people to submit comments on new posts".
+   Then `Posts > All > Screen Options 999 > Bulk Edit > Comments: Do not allow`.
+4. `Appearance > Widgets`: remove the **Recent Comments** widget.
+5. `Settings > Discussion`: **uncheck** "Allow link notifications from other blogs
+   (pingbacks and trackbacks)" — closes the `xmlrpc.php` pingback surface.
+6. Keep Akismet active (5.7.2) as a second line.
+
+#### 2. PLUGINS — deletion list
+**Verified present on both envs** (`readme.txt` 200): slider-and-carousel-plus-widget-for-instagram,
+reorder-by-term, wp-all-export (1.6.0), classic-editor (1.7.0), export-all-urls (6.0),
+wp-crontrol (2.0.0), akismet (5.7.2), forminator (1.53.0/1.53.1), wordpress-seo.
+Staging additionally: wordfence. Live: no wordfence.
+
+**Active (front-end asset present) — DO NOT DELETE:**
+| Plugin | Evidence |
+|---|---|
+| `instagram-feed` (Smash Balloon) | 6 refs on live homepage |
+| `yith-infinite-scrolling` | 2 refs on live + staging |
+| `wordpress-seo` (Yoast) | site-wide SEO |
+| `akismet` | spam filtering |
+| `forminator` | `/entry/` newsletter form (also the CVE — update, do not delete) |
+| `slider-and-carousel-plus-widget-for-instagram` | **ACTIVE ON STAGING ONLY** (1 asset ref). 0 refs on live. Client is right. |
+
+**Safe to delete — inactive, zero theme references:**
+`reorder-by-term`, `wp-all-export`, `export-all-urls`, `wp-crontrol`, `classic-editor`.
+
+**⚠️ DO NOT DELETE `classic-editor` without a check** — it is harmless but removing it only
+matters if an editor relies on the classic editing screen. Confirm with Owen first.
+
+**⚠️ MapSVG — NEVER DELETE.** Not in the probed list (dir name differs) but the theme has
+**~18 active `wp_mapsvg_regions_486` / `wp_mapsvg_schema` queries** in `functions.php`
+(L2320, L2345 are inside `wp_ajax_nopriv_*` handlers that run for anonymous visitors).
+Deleting the plugin risks the tables with it and would break `/globe/` + country status.
+
+**⚠️ `instagram-feed` placeholder images**: live homepage currently shows
+`plugins/instagram-feed/img/placeholder.png` — the Instagram feed is failing to load and
+falling back to placeholders. Separate issue, worth flagging.
+
+#### 3. USERS / 2FA — "do not remove accounts"
+**No account will be touched.** 2FA status:
+- **Live: no 2FA plugin at all.** No Wordfence, no two-factor plugin. Live has **zero 2FA**.
+- **Staging: Wordfence present** (readme 200). Wordfence 2FA is **per-user and opt-in by
+  default**, so enabling it does not lock anyone out.
+- `/wp-json/wp/v2/users` → 403, so the user list cannot be enumerated externally.
+
+**Safe 2FA rollout (no lockout):**
+1. Install **Wordfence** on live (already proven on staging).
+2. `Wordfence > Login Security`: enable 2FA but leave **"Grace period"** on and do **not**
+   tick "require 2FA for all users" until each admin has enrolled.
+3. Enrol admins **one at a time**, each confirming a successful login before the next.
+4. **Keep WP Engine portal access as break-glass** — it can disable a plugin via SSH if a
+   user is ever locked out.
+5. Do not change any user's role, password, or email.
+
+#### 4. BIRDINGTOP500 BADGE — repo DONE, staging NOT
+- Repo `footer.php:101` = hotlink `button.php?u=owendeutschphotography005`, alt "Birding Top 1000",
+  `width="207" height="83" loading="lazy" decoding="async"`, no `border` — **committed `daa085f`**.
+- **Staging still serves the static PNG**: `.../themes/owendeutsch/images/birdingtop500.png`.
+  Confirmed 2026-11-24. Staging theme predates the fix.
+- Client instruction "Staging still has the static PNG" — **confirmed correct**.
+
+#### 5. HOMEPAGE IMAGE DIMENSIONS — staging done, live NOT
+- Repo `templates/template-homepage.php` has **17 `od_image_size_attrs()` calls** (commit `f17cecd`).
+- **Staging: 18 imgs, 6 missing dims** (all UI chrome: bird-loader.gif, logo.png x2,
+  loader.svg, birdingtop500.png, close-btn.png). Content images fixed.
+- **Live: 22 imgs, 20 missing dims** — content images (perumap, scheduled bird, search-icon,
+  owendeutsch.png, BotTA-Graphic, instagram-owl) still have no dimensions. **Fix not deployed.**
+- `/grid/`, `/globe/`, `/countries/`, `/blog/` are **identical on both** (4 missing = chrome only).
+
+**⚠️ DO NOT "deploy staging to live".** AGENTS.md line ~771 records that staging **lags live**
+on every theme fix (conservation 5 missing, /blog/ 99 missing at last check). A staging→live
+DB push would roll back live fixes. Correct path: deploy the **theme zip** from `development`.
+
+#### ORDER OF OPERATIONS
+1. Backup both envs.
+2. Deploy `owendeutsch.zip` (`development`) to **staging** → verify `/entry/` + homepage dims + badge.
+3. Client sign-off.
+4. Deploy same zip to **live** → purge WP Rocket → WP Engine → Cloudflare.
+5. Forminator update 1.53.1 → 1.58.6 (staging first) — **security, highest priority**.
+6. Plugin deletions (after confirming the list above).
+7. Comment purge + widget removal + feed/pingback disable.
+8. 2FA rollout, one admin at a time.
+
 ### WP ENGINE SECURITY ALERT — Forminator 1.53.1 (CVE-2026-120676) — 2026-11-24
 
 WP Engine flagged both environments:
