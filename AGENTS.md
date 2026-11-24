@@ -108,6 +108,65 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### WP ENGINE SECURITY ALERT — Forminator 1.53.1 (CVE-2026-120676) — 2026-11-24
+
+WP Engine flagged both environments:
+- `owendeutsc2stg` on `owendeutsch01` — **1.53.1**
+- `owendeutsch21` (LIVE) — **1.53.1**
+
+**Verified live:** `/entry/` renders Forminator form **#31993** on **1.53.1** (all 7 asset URLs
+carry `?ver=1.53.1`). Staging identical (also 1.53.1, readme stable tag 1.53.0).
+
+**Only ONE page uses Forminator.** Crawled all 30 sitemap pages: `/entry/` is the sole page with
+Forminator markup (108 refs). Homepage, `/contact/`, `/about-owen/`, `/conservation/`,
+`/newsletter/` → **0**. The footer newsletter is **Mailchimp**, not Forminator.
+
+**What `/entry/` is:** a **newsletter signup form** — First Name, Last Name, Email, consent.
+**Publicly reachable and unauthenticated.** That matters because the CVE is
+"Unauthenticated Stored XSS" — the attack is *submitting the form*, which any visitor can do.
+
+**CVE details (Patchstack, PSID 6d012b79a7c4):**
+| Field | Value |
+|---|---|
+| CVE | CVE-2026-120676 |
+| Type | Unauthenticated Stored Cross-Site Scripting |
+| CVSS | **7.1** (medium priority) |
+| Vulnerable | **<= 1.58.4** |
+| **Patched in** | **1.58.5** |
+| Required privilege | Unauthenticated |
+| User interaction | Required (privileged user must view the entry) |
+| Published | 2026-11-20 |
+| Researcher | Maciej Komorowski |
+
+**Version gap:** installed 1.53.1 → **latest 1.58.6** (wordpress.org, updated 2026-11-17).
+That is **5 minor versions / ~5 releases behind**, not a single patch bump. Do NOT apply just
+1.58.5 — go to 1.58.6.
+
+**Why 5 versions behind is risky here:** 1.53.1 is far below the `<= 1.58.4` vulnerable range,
+so it is exposed to this CVE **and** every other Forminator issue fixed in 1.54–1.58.5.
+
+**Mitigation already partly in place:** Forminator markup is on exactly one page, so a temporary
+deactivation would only break `/entry/` — the newsletter signup. Acceptable stopgap if the update
+cannot be done immediately.
+
+**Remediation (staging first, per workflow):**
+1. Backup (BlogVault) + WP Engine restore point.
+2. Staging: update Forminator 1.53.1 → **1.58.6**.
+3. Smoke-test `/entry/`: form renders, all 4 fields present, nonce intact, submit succeeds,
+   success message shows, Mailchimp/email handoff still works.
+4. Check for PHP deprecations in the log (PHP 8.4.27 — a big jump may surface warnings).
+5. Purge WP Rocket → WP Engine → Cloudflare, then re-test (Autoptimize bundles the form CSS;
+   a stale bundle can break the form layout/nonce).
+6. Promote to live, re-verify `/entry/`.
+7. Re-scan Wordfence to confirm the finding clears.
+
+**Gotcha:** Autoptimize serves the form CSS from
+`/wp-content/cache/autoptimize/autoptimize_single_*.php`. After the update, clear Autoptimize's
+cache too, or the old bundled CSS persists.
+
+**Client-facing note:** recommend enabling WP Engine Smart Plugin Manager or at minimum
+Forminator auto-updates — this is the second time drift has created exposure.
+
 ### CORRECTION — Birding Top badge IS the "tracking code" (client is right) — 2026-11-24
 
 My earlier note said "no tracking code" in the footer. **Technically true, but misleading.**
