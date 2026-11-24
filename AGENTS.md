@@ -108,6 +108,36 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### FORMINTOR UPDATE — LIVE DONE, STAGING LAGGING — 2026-11-24
+
+**LIVE: 1.58.6 ✅** — verified `/entry/` asset URLs now carry `ver=1.58.6` (was 1.53.1).
+`1.58.6 >= 1.58.5` patched threshold → **CVE-2026-120676 is CLOSED on live.**
+
+Post-update smoke test on `/entry/` (all pass):
+- `forminator-module-31993` present, `data-form-id="31993"`
+- nonce field present
+- all 4 fields present: `name-1`, `name-2`, `email-1`, `consent-1`
+- submit button present
+- 4 JS + 4 CSS assets load
+- **no** PHP `Fatal error` / `Warning` / `Notice` / `Deprecated` in the rendered HTML
+- page HTTP 200
+
+**⚠️ STAGING IS NOW THE EXPOSED ENVIRONMENT: still 1.53.1.** Verified `/entry/` on
+`owendeutsc2stg` returns `ver=1.53.1`. The fix went to live first, staging was skipped.
+Staging is on `owendeutsch01` and is reachable at a public hostname — it must be updated too.
+
+**⚠️ `readme.txt` is stale.** `wp-content/plugins/forminator/readme.txt` still reports
+`Stable tag: 1.53.0` even though the running version is 1.58.6. Do **not** use readme.txt to
+determine the installed version on this site — read `?ver=` off the asset URLs instead.
+(That is how the earlier "1.53.1" figure was confirmed, and it is the reliable method here.)
+
+**Not verified:** actual form submission. `wp-admin/admin-ajax.php` → 403 (WAF), and posting a
+real entry would create a genuine subscriber + notification email. Left to the client to
+submit one test entry in a browser.
+
+**Remaining after this:** update staging to 1.58.6, then re-scan to confirm the finding clears
+on both environments.
+
 ### PHASE 1-2 CLOSE-OUT AUDIT — 2026-11-24 (client approved 5 workstreams)
 
 **HARD BLOCKER: we have NO admin access to either environment.**
