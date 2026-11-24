@@ -386,6 +386,51 @@ and it is independent of the cleaner.
 The sandbox has **no root** — `apt-get install php-cli` fails. PHP linting requires the static
 binary: `curl -sL -o php83.tgz https://dl.static-php.dev/static-php-cli/common/php-8.3.14-cli-linux-x86_64.tar.gz && tar xzf php83.tgz`
 
+### ✅ AUTHORITATIVE DELETED-PLUGIN LIST — from live wp-admin (2026-11-24)
+
+Source: client pasted the live Plugins screen (24 items, 22 active, 2 inactive). The
+"successfully deleted" banners in that screen are the ground truth.
+
+**12 plugins deleted from LIVE:**
+1. Akismet Anti-spam: Spam Protection
+2. Classic Editor
+3. Export All URLs
+4. MapSVG Pro
+5. Reorder by Term
+6. ReOrder Posts within Categories
+7. Slider and Carousel Plus Widget for Social Media
+8. Tumblr Importer
+9. WordPress Importer  *(not in the earlier 12-name list — new)*
+10. WP All Export
+11. WP Content Copy Protection & No Right Click (premium)
+12. WP Crontrol
+13. WP Import Export Lite
+
+(That is 13 names; #9 WordPress Importer was missing from the earlier inferred list.)
+
+#### 🔴 CRITICAL — I reported these as "still present". THEY ARE NOT. My probe was poisoned.
+First probe returned `HTTP 200` + real readme bodies for `akismet`, `classic-editor`,
+`export-all-urls`, `reorder-by-term`, `wp-all-export`, `wp-crontrol`,
+`slider-and-carousel-plus-widget-for-instagram` → I wrongly concluded "deactivated, not deleted".
+Re-probed with `Cache-Control: no-cache` + random query string:
+**all 7 → HTTP/2 404, `cf-cache-status: BYPASS`** (BYPASS = hit origin, not cache).
+**Cloudflare was replaying a cached 200 from before the deletion.** The admin screen is correct.
+
+**METHOD RULE (permanent): never trust a single asset probe on this host.**
+Always send `Cache-Control: no-cache` + unique `?cb=` and require `cf-cache-status: BYPASS`
+before treating a 200 as evidence. A cached 200 can survive a deletion indefinitely.
+
+#### Current 24 installed (22 active, 2 inactive) — matches admin screen
+Active: ACF Pro 6.8.12 · Autoptimize 3.1.17 · Bird Analytics 1.0.0 · Category Order & Taxonomy Terms
+Order 2.1 · Entry Counter 1.0 · Forminator **1.58.6** · Hide Featured Image 1.3.1 · Imagify 2.3.5 ·
+Migrate Guru 6.72 · Missed Schedule Post Publisher 2.4 · Past Newsletter Entries 1.0 · Popup Maker
+1.25.0 · reCaptcha by BestWebSoft 2.1 · Redirection 5.10.1 · Regenerate Thumbnails 3.1.6 ·
+Smash Balloon Instagram Feed 6.17.0 · String Locator 2.6.8 · BlogVault 6.85 · WP Activity Log 5.7.0
+· YITH Infinite Scrolling 2.14.0 · Yoast Duplicate Post 4.7 · Yoast SEO 28.9
+Inactive: **MapSVG 9.0.13** (undeletable — "Required by: MapSVG Pro" stale dep) · **Wordfence 9.1.1**
+
+**Auto-updates: only 1 of 24 enabled.** 23 disabled. That is a standing security gap.
+
 ### LIVE PLUGIN AUDIT AFTER CLEANUP — 2026-11-24 (client supplied wp-admin plugin list)
 
 **24 plugins installed, 22 active, 2 inactive.** Client deleted 11. Verified live post-cleanup:
@@ -417,44 +462,6 @@ dependency record now pointing at a deleted plugin.
    WP Engine "clean up" or hosting migration**.
 4. If the client wants the dependency warning gone, deactivate is already done; do **not** click
    Delete on MapSVG free.
-
-### ⚠️ CORRECTION 2026-11-24 — "deleted by client" list was WRONG
-
-Re-probed both environments by fetching `/wp-content/plugins/<dir>/readme.txt` and **reading the
-body** (a bare HTTP 200 is not proof — the host serves `.php` as 403 and `readme.txt` 404 for some
-paths; always confirm the file body contains the plugin name).
-
-#### Still PRESENT and publicly served on LIVE (directory + files intact)
-| Plugin dir | Version | Note |
-|---|---|---|
-| `akismet` | 5.7.2 | **still on disk** — contradicts "Akismet was deleted" |
-| `classic-editor` | 1.7.0 | still on disk |
-| `export-all-urls` | 6.0 | still on disk |
-| `reorder-by-term` | trunk | still on disk |
-| `wp-all-export` | 1.6.0 | still on disk |
-| `wp-crontrol` | 2.0.0 | still on disk |
-| `slider-and-carousel-plus-widget-for-instagram` | 1.x | **still on disk on LIVE too** (not staging-only) |
-
-These directories being 200 with a real readme means the **files were NOT deleted** — at most the
-plugins were *deactivated*. The earlier claim "Client deleted 11" is unsupported by the live FS.
-Either the client deactivated only, or deleted then reinstalled, or the deletion happened on a
-different environment.
-
-#### Actually GONE (404 in both envs — genuinely deleted)
-`mapsvg-pro` · `reorder-posts-within-categories` · `slider-and-carousel-plus-widget-for-social-media` ·
-`tumblr-importer` · `wp-content-copy-protection` · `wp-import-export-lite`
-
-#### Staging differs for the remaining ones
-`tumblr-importer` and `wp-import-export-lite` are **present on staging, absent on live** → staging
-still carries 2 plugins live does not.
-
-**Consequence for the client deliverable:** do NOT send the "Deleted by client: …" 12-name list as
-fact. It is not verifiable and at least 6 of the 12 are still resident on live. The only
-defensible answer is a fresh wp-admin plugin screen export, or WP-CLI `wp plugin list` per env.
-
-**Method note for future audits:** `readme.txt` 200 + body containing the plugin header = present.
-`readme.txt` 404 = directory absent (unless the plugin ships no readme — Spot-check with a known
-asset like `assets/` or the main `.php` file before declaring it deleted).
 
 #### ⚠️ WP Rocket appears to be gone — contradicts earlier assumption
 `wp-content/plugins/wp-rocket/` → readme **404**, no `wp-rocket` string in page HTML.
