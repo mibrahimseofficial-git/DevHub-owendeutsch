@@ -108,6 +108,89 @@ first; our DOCX (21 suggestions) waits for client go-ahead. For each task:
   the pre-change copy for diffs.
 - Rebuild the zip with directory entries preserved (148 entries, top dir `owendeutsch/`).
 
+### HOMEPAGE: STAGING vs LIVE DIFF — 2026-11-24 (measured, not inferred)
+
+Fetched both homepages fresh with random cache-busting. **Live 208,789 B / 22 `<img>`;
+Staging 193,035 B / 18 `<img>`.**
+
+#### 1. Theme version — staging is OLDER
+| | Live | Staging |
+|---|---|---|
+| Content images with width/height | **0 of 11** | **11 of 11** (`od_image_size_attrs()`) |
+| `<img>` missing dims | **20 of 22** | **6 of 18** |
+| Reference date in JSON-LD | `dateModified 2026-11-06` | `dateModified 2026-10-30` |
+
+So staging has **only** the image-dimension fix; live has every other theme fix.
+
+#### 2. 🔴 Staging's CSS/JS pipeline is BROKEN — that is the main diff
+Staging serves Autoptimize output with a **`.php` extension** instead of `.css`/`.js`:
+
+```
+STAGING: autoptimize_single_f9a0546cbbd23181c8f1485061b179f2.php
+LIVE   : autoptimize_single_f9a0546cbbd23181c8f1485061b179f2.css
+```
+
+Same content hash, wrong extension. Likely `Autoptimize` "save aggregated files to disk" misconfigured,
+or the `.css`/`.js` rewrite being blocked. **Consequence:** staging is not a valid render test for
+any CSS/JS/font work. A staging sign-off on layout would be misleading.
+
+Staging also loads 5 stylesheets live has dropped: `fancybox-min.css`, `font-awesome.min.css`,
+`owl.carousel.min.css`, `owl.theme.default.min.css`, plus `.php` duplicates.
+
+#### 3. Plugin footprint on the homepage
+| Plugin | Live | Staging |
+|---|---|---|
+| `instagram-feed` (Smash Balloon) | **6** | 2 |
+| `yith-infinite-scrolling` | 2 | 2 |
+| `slider-and-carousel-plus-widget-for-instagram` | **0** | **1** (still active) |
+
+#### 4. 🔴 Live's Instagram feed is failing; staging's is not
+- **Live: 4 × `instagram-feed/img/placeholder.png`**, 39 `sbi_` refs
+- **Staging: 0 placeholders**, 10 `sbi_` refs
+
+Live is rendering grey placeholders where photos should be. Staging renders real content.
+This is a plugin/API problem on live (expired Instagram token or blocked API call), not a theme issue.
+**Separate from the CLS fix and needs its own fix.** It is on the highest-traffic page.
+
+#### 5. Footer badge
+- **Live:** `button.php?u=owendeutschphotography005` (hotlink — client's change, correct)
+- **Staging:** `birdingtop500.png` (static file, old theme)
+
+#### 6. Scheduled bird image differs
+- **Live:** `uploads/2026/11/…Wild-Turkey…-copy.png`
+- **Staging:** `uploads/2026/08/…Wild-Turkey…` (no `-copy`)
+
+Different file **and** different upload month. This is a **content/DB** difference, not theme. Media
+libraries have diverged.
+
+#### 7. SEO/head differences
+- **Live has `rel="canonical" href="https://owendeutsch.com/"`; staging has NO canonical.** Expected
+  (Yoast suppresses canonical on non-production hosts), but it means staging cannot be used to test
+  canonical output.
+- JSON-LD is otherwise identical in `@type` set; staging's block is 171 B larger purely because the
+  hostname `owendeutsc2stg.wpenginepowered.com` is longer than `owendeutsch.com` and appears ~6 times.
+  **No content difference.**
+- Both share the same `<title>`.
+
+#### 8. Script counts (theme JS)
+| | Live | Staging |
+|---|---|---|
+| `d3` refs | 12 | 18 |
+| `owl.carousel` | **0** | **1** |
+| `fancybox` | 2 | 4 |
+| others (topojson, queue, bootstrap, imagesloaded, anime) | same | same |
+
+Live has already dropped owl-carousel and half the fancybox refs — consistent with the
+`is_page(5)` / `is_page(13433)` dequeue blocks being newer on live.
+
+#### Bottom line
+**Staging is not a preview of live. It is an older theme, with a broken asset pipeline, an active
+plugin live has removed, and a divergent media library.** Deploying staging→live would:
+lose the homepage dims fix' sibling fixes, reintroduce the slider plugin's CSS, break the CSS/JS
+extensions, and revert the badge.
+
+**Correct deploy unit = `owendeutsch.zip` from `development`.** Never a staging DB/file sync.
+
 ### LIVE PLUGIN AUDIT AFTER CLEANUP — 2026-11-24 (client supplied wp-admin plugin list)
 
 **24 plugins installed, 22 active, 2 inactive.** Client deleted 11. Verified live post-cleanup:
