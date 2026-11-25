@@ -1,0 +1,74 @@
+You are editing content on owendeutsch.com via wp-admin. You have a fixed
+worklist of 6 items. Do NOT look for other issues. Do NOT follow any outbound
+link. Do NOT touch anything not on this list.
+
+RULES
+- One item at a time. Show me the before/after, then wait for me to say go.
+- Never delete a page, post, plugin, user, or comment.
+- Never touch the Plugins, Users, Settings, or Tools screens.
+- Never purge or clear caches.
+- Never follow an external link. If a link looks wrong, report it, don't visit it.
+- If a page does not match its description below, STOP and ask.
+
+HOW TO OPEN EACH PAGE
+Use wp-admin > Posts > search the slug, for items 1-4.
+Use wp-admin > Pages > search the slug, for item 5.
+Item 6 is a Lodge post type - use the Lodges menu in wp-admin.
+Do not edit via Appearance > Theme Editor or any file editor. Content only.
+
+=== TASK 1 - Fix 4 broken hrefs (edit the URL only, keep anchor text) ===
+
+ITEM 1 - slug: why-birds-migrate  (Posts)
+There is a link whose URL field contains the text
+  Migration: Exploring the Remarkable Journeys of Birds
+That is a book title, not a URL, so the link is broken.
+Set the link URL to:
+  https://www.amazon.com/Migration-Exploring-Remarkable-Journeys-Birds/dp/1787135047
+Leave the visible anchor text exactly as it is.
+
+ITEM 2 - slug: its-gone-but-where-did-it-go-an-aba-young-birder-essay  (Posts)
+There is one doi.org link. It ends with the characters ".CO;2)" - a stray
+closing bracket. Remove ONLY that final ")" so the URL ends in ".CO;2".
+Set the link URL to:
+  https://doi.org/10.1675/1524-4695(2006)29%5B169:WCADBI%5D2.0.CO;2
+This has been confirmed to resolve. The current version returns 404.
+
+ITEM 3 - slug: greater-flamingo-the-dramatic-migrator  (Posts)
+There is an Amazon link whose affiliate tag is "smarturl-20" followed by an
+invisible character. Do not try to find or delete the invisible character.
+Instead: select the ENTIRE URL field, clear it, and type exactly this:
+  https://www.amazon.com/Migration-Exploring-Remarkable-Journeys-Birds/dp/1787135047?tag=smarturl-20
+Check afterwards that the URL ends in "smarturl-20" with nothing after it.
+
+ITEM 4 - slug: 2021-a-year-in-review  (Posts)
+There are TWO links to the same Broad-billed Hummingbird article. One is
+correct. The other contains a space encoded as %20 and a trailing bracket:
+  https://owendeutsch.com/surprise-broad-billedhummingbird-%20in-chicago/)
+Change ONLY the broken one to:
+  https://owendeutsch.com/surprise-broad-billed-hummingbird-in-chicago/
+Leave the already-correct link alone.
+
+=== TASK 2 - Remove 2 links, keep the words ===
+
+ITEM 5 - slug: african-bird-focus-south-africa  (Pages)
+There is one link with the anchor text "here" pointing to
+https://www.africanpenguinsafe.org/
+That domain no longer exists. Remove the hyperlink so "here" becomes plain
+text. Do not delete the word, do not rewrite the sentence.
+
+ITEM 6 - slug: indiana-dunes-national-park-indiana-usa  (Lodges)  * URGENT *
+The page heading is a link to https://www.dunesnationalpark.org/
+That domain is no longer a national park site - it now serves gambling spam.
+You must remove the hyperlink, not edit the URL.
+DO NOT use the page editor for this - the heading link comes from a custom
+field. Instead:
+  1. Open the lodge in wp-admin
+  2. Find the custom field named  site_url
+  3. Clear its value completely (leave it empty)
+  4. Update
+The theme then renders the heading as plain text automatically.
+Keep the heading wording "Indiana Dunes National Park - Indiana, USA" unchanged.
+
+=== WHEN DONE ===
+List each item, the page, and exactly what you changed. Then stop.
+If any item did not match its description, say so and leave it untouched.
